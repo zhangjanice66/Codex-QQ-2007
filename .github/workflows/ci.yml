@@ -1,0 +1,49 @@
+name: macOS engine checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check shell syntax
+        shell: bash
+        run: |
+          while IFS= read -r file; do
+            bash -n "$file"
+          done < <(find macos -type f \( -name '*.sh' -o -name '*.command' \) -print)
+
+      - name: Check Node.js syntax
+        shell: bash
+        run: |
+          while IFS= read -r file; do
+            node --check "$file" >/dev/null
+          done < <(find macos -type f \( -name '*.mjs' -o -name '*.js' \) -print)
+
+      - name: Check version consistency
+        shell: bash
+        run: |
+          expected="$(tr -d '\r\n' < macos/VERSION)"
+          common="$(sed -n 's/^SKIN_VERSION="\([^"]*\)"$/\1/p' macos/scripts/common-macos.sh)"
+          injector="$(sed -n 's/^const SKIN_VERSION = "\([^"]*\)";$/\1/p' macos/scripts/injector.mjs)"
+          test -n "$expected"
+          test "$common" = "$expected"
+          test "$injector" = "$expected"
+
+      - name: Run portable regressions
+        run: |
+          node --test macos/tests/*.test.mjs
+          node macos/scripts/injector.mjs --check-payload \
+            --theme-dir macos/presets/preset-codex-1907-deep >/dev/null

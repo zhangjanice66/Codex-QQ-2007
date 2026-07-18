@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "preset-codex-1907-deep",
+  "name": "Codex 2007 · 深度仿制版",
+  "mode": "deep",
+  "brandSubtitle": "张奈斯 · ONLINE",
+  "tagline": "别迷恋姐，姐只是个传说。",
+  "projectPrefix": "我的项目 · ",
+  "projectLabel": "🐧  选择项目",
+  "statusText": "张奈斯 · 在线 · LV07",
+  "quote": "CODEX 2007",
+  "profile": {
+    "nickname": "张奈斯",
+    "signature": "别迷恋姐，姐只是个传说。",
+    "level": "LV07",
+    "status": "online",
+    "statuses": ["online", "busy", "offline"]
+  },
+  "decorations": {
+    "qqShow": "qq-show.png",
+    "assistant": "assistant.png"
+  },
+  "image": "background.jpg",
+  "appearance": "light",
+  "art": {
+    "focusX": 0.74,
+    "focusY": 0.46,
+    "safeArea": "left",
+    "taskMode": "ambient"
+  },
+  "colors": {
+    "background": "#F5F8FC",
+    "panel": "#FFFFFF",
+    "panelAlt": "#E5F1FF",
+    "accent": "#3A8DD8",
+    "accentAlt": "#62A8EE",
+    "secondary": "#70C4F3",
+    "highlight": "#7557C8",
+    "text": "#173352",
+    "muted": "#587899",
+    "line": "#7A96DF"
+  }
+}
