@@ -557,20 +557,18 @@
     'button[aria-label="Close review tab"]',
   ].join(", ");
   const NATIVE_RIGHT_TOGGLE_SELECTOR = [
-    'button[aria-label="显示/隐藏侧边栏"]',
-    'button[aria-label="Show/hide sidebar"]',
-    'button[aria-label="切换置顶摘要"]',
-    'button[aria-label="Toggle pinned summary"]',
     'button[aria-label="切换摘要"]',
     'button[aria-label="Toggle summary"]',
+    'button[aria-label="切换置顶摘要"]',
+    'button[aria-label="Toggle pinned summary"]',
   ].join(", ");
   const interactionBindings = [];
-  const bindInteraction = (target, type, handler, marker) => {
+  const bindInteraction = (target, type, handler, marker, options) => {
     if (!target?.addEventListener || target.dataset?.[marker]) return;
     if (target.dataset) target.dataset[marker] = "true";
-    target.addEventListener(type, handler);
+    target.addEventListener(type, handler, options);
     interactionBindings.push(() => {
-      target.removeEventListener?.(type, handler);
+      target.removeEventListener?.(type, handler, options);
       if (target.dataset) delete target.dataset[marker];
     });
   };
@@ -594,25 +592,65 @@
   let skinView = readStoredJson(VIEW_KEY, "deep") === "native" ? "native" : "deep";
 
   const normalizedLabel = (node) => (node?.textContent || "").replace(/\s+/g, " ").trim();
+  const nativeSummaryToggles = () => [
+    ...(document.querySelectorAll?.(NATIVE_RIGHT_TOGGLE_SELECTOR) || []),
+  ];
+  const summaryToggleByState = (labels, pressed) => labels
+    .map((label) => nativeSummaryToggles().find((candidate) =>
+      candidate.getAttribute?.("aria-label") === label &&
+      candidate.getAttribute?.("aria-pressed") === pressed))
+    .find(Boolean);
+  const pinNativeSummary = (attempt = 0) => {
+    if (window[DISABLED_KEY] || window[STATE_KEY]?.installToken !== installToken) return false;
+    const pin = summaryToggleByState(["切换置顶摘要", "Toggle pinned summary"], "false");
+    if (pin) {
+      pin.click?.();
+      scheduleEnsure({ route: true, layout: false });
+      return true;
+    }
+    if (attempt >= 8) return false;
+    setTimeout(() => pinNativeSummary(attempt + 1), 40);
+    return true;
+  };
   const setNativeRightVisible = (visible) => {
-    const desiredPressed = visible ? "false" : "true";
-    const toggles = [...(document.querySelectorAll?.(NATIVE_RIGHT_TOGGLE_SELECTOR) || [])];
-    const preferredLabels = visible
-      ? ["切换置顶摘要", "Toggle pinned summary", "显示/隐藏侧边栏", "Show/hide sidebar", "切换摘要", "Toggle summary"]
-      : ["切换置顶摘要", "Toggle pinned summary", "显示/隐藏侧边栏", "Show/hide sidebar", "切换摘要", "Toggle summary"];
-    const toggle = preferredLabels
-      .map((label) => toggles.find((candidate) =>
-        candidate.getAttribute?.("aria-label") === label &&
-        candidate.getAttribute?.("aria-pressed") === desiredPressed))
-      .find(Boolean);
+    const pinLabels = ["切换置顶摘要", "Toggle pinned summary"];
+    const summaryLabels = ["切换摘要", "Toggle summary"];
+    if (visible) {
+      const pin = summaryToggleByState(pinLabels, "false");
+      if (pin) {
+        pin.click?.();
+        scheduleEnsure({ route: true, layout: false });
+        return true;
+      }
+      const summary = summaryToggleByState(summaryLabels, "false");
+      if (!summary) return false;
+      summary.click?.();
+      pinNativeSummary();
+      scheduleEnsure({ route: true, layout: false });
+      return true;
+    }
+    const toggles = [
+      summaryToggleByState(pinLabels, "true"),
+      summaryToggleByState(summaryLabels, "true"),
+    ].filter(Boolean);
     const close = visible ? null : document.querySelector?.(
       'button[aria-label="关闭审阅标签页"], button[aria-label="Close review tab"]',
     );
-    const control = toggle || close;
-    if (!control) return false;
-    control.click?.();
+    if (!toggles.length && !close) return false;
+    for (const toggle of toggles) toggle.click?.();
+    close?.click?.();
     scheduleEnsure({ route: true, layout: false });
     return true;
+  };
+  const bindNativeRightToggleGuards = (root) => {
+    for (const toggle of nativeSummaryToggles()) {
+      bindInteraction(toggle, "click", () => {
+        const opening = toggle.getAttribute?.("aria-pressed") !== "true";
+        setAttribute(root, "data-ds2007-native-right", opening ? "open" : "closed");
+        setAttribute(root, "data-ds2007-native-right-layout", opening ? "pending" : "none");
+        scheduleEnsure({ route: true, layout: false });
+      }, "ds2007NativeRightGuardBound", true);
+    }
   };
   const readCodexPetSnapshot = () => {
     if (codexPetSnapshot !== undefined) return codexPetSnapshot;
@@ -656,23 +694,34 @@
       String(owner.className || ""),
       normalizedLabel(owner),
     ].join(" ");
-    if (/(审查|review|diff|变更)/i.test(signature)) return "代码审查";
     if (/(环境|environment)/i.test(signature)) return "环境信息";
+    if (/(审查|review|diff|变更)/i.test(signature)) return "代码审查";
     if (/(文件|file)/i.test(signature)) return "文件详情";
     return "Codex 信息";
   };
-  const readNativeRightState = (shellMain) => [
-    ...(document.querySelectorAll?.(NATIVE_RIGHT_PANEL_SELECTOR) || []),
-    ...(document.querySelectorAll?.(NATIVE_RIGHT_SIGNAL_SELECTOR) || []),
-  ].map((candidate) => {
-    if (candidate.closest?.(`#${CHROME_ID}`)) return false;
-    const structural = candidate.matches?.(NATIVE_RIGHT_PANEL_SELECTOR);
-    const owner = persistentNativeRightOwner(candidate, shellMain);
-    const box = owner?.getBoundingClientRect?.();
-    return owner && isVisiblyOpen(candidate, shellMain) && isVisiblyOpen(owner, shellMain) &&
-      box.width >= 220 && box.height >= 240
-      ? { owner, layout: structural ? "structural" : "floating" } : null;
-  }).find(Boolean) || null;
+  const readNativeRightState = (shellMain) => {
+    const summaryToggles = nativeSummaryToggles();
+    const pinnedSummaryOpen = summaryToggles.some((toggle) =>
+      /^(切换置顶摘要|Toggle pinned summary)$/.test(toggle.getAttribute?.("aria-label") || "") &&
+      toggle.getAttribute?.("aria-pressed") === "true");
+    const summaryExplicitlyClosed = summaryToggles.length > 0 &&
+      summaryToggles.every((toggle) => toggle.getAttribute?.("aria-pressed") !== "true");
+    return [
+      ...(document.querySelectorAll?.(NATIVE_RIGHT_PANEL_SELECTOR) || []),
+      ...(document.querySelectorAll?.(NATIVE_RIGHT_SIGNAL_SELECTOR) || []),
+    ].map((candidate) => {
+      if (candidate.closest?.(`#${CHROME_ID}`)) return false;
+      if (summaryExplicitlyClosed &&
+        candidate.matches?.('[data-slot="thread-summary-panel-section-actions"]')) return false;
+      const structural = candidate.matches?.(NATIVE_RIGHT_PANEL_SELECTOR);
+      const owner = persistentNativeRightOwner(candidate, shellMain);
+      const box = owner?.getBoundingClientRect?.();
+      return owner && isVisiblyOpen(candidate, shellMain) && isVisiblyOpen(owner, shellMain) &&
+        box.width >= 220 && box.height >= 240
+        ? { owner, layout: structural ? "structural" : pinnedSummaryOpen ? "pinned" : "floating" }
+        : null;
+    }).find(Boolean) || null;
+  };
   const SIDEBAR_SECTIONS = new Map([
     ["置顶", "pinned"],
     ["项目", "projects"],
@@ -1054,6 +1103,7 @@
         message.removeAttribute?.("data-ds1907-time");
       }
     }
+    bindNativeRightToggleGuards(root);
     for (const trigger of chrome.querySelectorAll?.(
       '.ds2007-right-tabs [data-action], .ds2007-friends-tab [data-action]',
     ) || []) {
@@ -1083,6 +1133,8 @@
       .find((candidate) => normalizedLabel(candidate));
     const activeTaskTitle = sidebar?.querySelector?.(
       '[data-app-action-sidebar-thread-active="true"] [data-thread-title="true"]',
+    ) || document.querySelector?.(
+      'aside.app-shell-left-panel [data-app-action-sidebar-thread-active="true"]',
     );
     const taskName = normalizedLabel(nativeTaskTitle) || normalizedLabel(activeTaskTitle);
     const projectControlName = normalizedLabel(projectControl).replace(/^(选择项目|当前项目)[·：:\s]*/, "");
@@ -1251,7 +1303,7 @@
     if (skinView === "native") return;
     let routeChanged = false;
     let frameChanged = false;
-    const routeSelector = `main.main-surface, [role="main"], aside.app-shell-left-panel, header.app-header-tint, ${NATIVE_RIGHT_PANEL_SELECTOR}, ${NATIVE_RIGHT_SIGNAL_SELECTOR}`;
+    const routeSelector = `main.main-surface, [role="main"], aside.app-shell-left-panel, header.app-header-tint, ${NATIVE_RIGHT_PANEL_SELECTOR}, ${NATIVE_RIGHT_SIGNAL_SELECTOR}, ${NATIVE_RIGHT_TOGGLE_SELECTOR}`;
     const routeContextSelector = 'main.main-surface > header.app-header-tint, .group\\/project-selector, ' +
       'aside.app-shell-left-panel [data-app-action-sidebar-thread-row]';
     for (const record of records) {

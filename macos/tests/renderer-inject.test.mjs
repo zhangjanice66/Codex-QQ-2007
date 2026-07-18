@@ -158,21 +158,23 @@ assert.match(css, /data-dream-skin-mode="qq2007"[\s\S]{0,160}body\s*\{[\s\S]{0,3
   "QQ2007 must be a real grid shell instead of absolutely positioned overlays.");
 assert.match(css, /--ds2007-title-height:\s*46px/,
   "The custom title row must reserve the full native Codex header height.");
-assert.match(css, /\.ds2007-titlebar\s*\{[\s\S]{0,700}-webkit-app-region:\s*drag/,
-  "The empty title surface must remain a native window drag region.");
-assert.match(css, /\.ds2007-window-title\s*\{[^}]*min-width:\s*0[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/s,
-  "Long dynamic titles must truncate on one line.");
+assert.match(css, /\.ds2007-titlebar\s*\{[\s\S]{0,700}-webkit-app-region:\s*no-drag/,
+  "The titlebar must not turn the native window controls into a drag target.");
+assert.match(css, /\.ds2007-window-title\s*\{[^}]*min-width:\s*0[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap[^}]*-webkit-app-region:\s*drag/s,
+  "The protected title text region must remain draggable and truncate on one line.");
 assert.match(css, /\.ds2007-statusbar\s*\{[\s\S]{0,600}pointer-events:\s*none/,
   "The decorative status row must not intercept native interactions.");
 assert.doesNotMatch(css, /@media \(max-width:\s*840px\)[\s\S]{0,500}\.ds2007-toolbar > button span\s*\{\s*display:\s*none/,
   "Responsive layouts must retain the six primary toolbar labels.");
-assert.match(css, /aside\.app-shell-left-panel\s*\{[\s\S]{0,500}overflow:\s*hidden !important;/,
-  "The sidebar shell must not scroll over the native fixed account footer.");
+assert.match(css, /aside\.app-shell-left-panel\s*\{[\s\S]{0,500}overflow:\s*visible !important;/,
+  "The sidebar shell must not clip the native resize handle at its boundary.");
 assert.match(
   css,
-  /aside\.app-shell-left-panel > [^{]+:has\(> \.sidebar-resize-handle-line\)\s*\{[^}]*pointer-events:\s*none !important;[^}]*cursor:\s*default !important;/s,
-  "The fixed QQ2007 sidebar must disable the native drag-to-collapse handle without replacing native show/hide controls.",
+  /aside\.app-shell-left-panel > [^{]+:has\(> \.sidebar-resize-handle-line\)\s*\{[^}]*pointer-events:\s*auto !important;[^}]*cursor:\s*col-resize !important;/s,
+  "The QQ2007 sidebar must preserve the native drag-to-resize handle.",
 );
+assert.doesNotMatch(css, /aside\.app-shell-left-panel\s*\{[^}]*width:\s*var\(--ds2007-sidebar-width\) !important/s,
+  "The QQ2007 sidebar must not override native drag width with an important fixed width.");
 assert.match(css, /aside\.app-shell-left-panel \[class\*="group\/folder-row"\][\s\S]{0,180}animation:\s*none !important;[\s\S]{0,120}transition:\s*none !important;/,
   "Project rows must not run entry or size animations.");
 assert.doesNotMatch(css, /aside\.app-shell-left-panel \*\s*\{[^}]*animation:\s*none !important;/,
@@ -203,13 +205,28 @@ assert.match(
 );
 assert.match(
   css,
+  /data-ds2007-friends="closed"\][^{]*body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 28px;/,
+  "Closing the friend panel must retain the compact recovery rail.",
+);
+assert.match(
+  css,
+  /data-ds2007-friends="closed"\][^{]*\.ds2007-friends-tab\s*\{[^}]*display:\s*flex;/,
+  "The closed friend column must keep its recovery control visible.",
+);
+assert.match(
+  css,
   /data-ds2007-native-right="open"\][^{]*body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 28px;/,
   "A native right panel must retain the compact right recovery rail.",
 );
-assert.ok(
-  css.indexOf('data-ds2007-friends="collapsed"] body') <
-    css.indexOf('data-ds2007-native-right="open"] body'),
-  "Native-right grid rules must explicitly preserve the compact right rail.",
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="(?:pending|floating)"\][^{]*body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) var\(--ds2007-friend-width\);/,
+  "Opening a floating summary must preserve the existing right-column geometry.",
+);
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="(?:pending|floating)"\][^{]*\.ds2007-friends-tab\s*\{[^}]*display:\s*none;/,
+  "A floating summary must use its full dock without an extra recovery rail.",
 );
 assert.match(css, /--ds2007-friend-width:\s*300px/,
   "The desktop native/friend right dock must use the agreed stable 300px width.");
@@ -226,6 +243,11 @@ assert.match(
   css,
   /pointer-events-auto:has\(\[data-slot="thread-summary-panel-section-actions"\]\)\s*\{[^}]*width:\s*var\(--ds2007-friend-width\) !important;/s,
   "The native summary must share the same responsive width token as the friend dock.",
+);
+assert.match(
+  template,
+  /const routeSelector = `[^`]*\$\{NATIVE_RIGHT_TOGGLE_SELECTOR\}/,
+  "Dynamically mounted native summary toggles must schedule interaction rebinding.",
 );
 assert.doesNotMatch(css, /data-dream-skin-mode="qq2007"[^}]*\.composer-surface-chrome[^}]*position:\s*(?:fixed|absolute)/,
   "The QQ2007 composer must remain in native document flow.");
@@ -534,9 +556,17 @@ function createFixture(theme, {
       return { left: 1220, right: 1248, top: 130, bottom: 158, width: 28, height: 28 };
     },
   };
+  const nativeSummaryListeners = new Set();
   const nativeSummaryToggle = {
+    dataset: {},
     clickCount: 0,
-    click() { this.clickCount += 1; summaryOpen = !summaryOpen; },
+    addEventListener(type, handler) { if (type === "click") nativeSummaryListeners.add(handler); },
+    removeEventListener(type, handler) { if (type === "click") nativeSummaryListeners.delete(handler); },
+    click() {
+      this.clickCount += 1;
+      for (const handler of nativeSummaryListeners) handler({ target: this });
+      summaryOpen = !summaryOpen;
+    },
     getAttribute(name) {
       if (name === "aria-label") return "切换置顶摘要";
       if (name === "aria-pressed") return summaryOpen ? "true" : "false";
@@ -1015,8 +1045,8 @@ const pinnedNativeSummary = createFixture({
 vm.runInNewContext(pinnedNativeSummary.payload, pinnedNativeSummary.context);
 assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-native-right"), "open",
   "A persistent pinned summary must take over the QQ2007 right dock.");
-assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-native-right-layout"), "floating",
-  "Pinned summaries must reserve their width inside the central panel.");
+assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-native-right-layout"), "pinned",
+  "Pinned summaries must use the native dock instead of floating-popover styling.");
 assert.equal(pinnedNativeSummary.nodes.get("codex-dream-skin-chrome")
   .querySelector(".ds2007-native-tab-label").textContent, "环境信息",
 "Environment summaries must not be mislabeled as file details when their body mentions files.");
@@ -1040,6 +1070,25 @@ closedNativeSummary.flushTimers(96);
 assert.equal(closedNativeSummary.nativeSummaryToggle.clickCount, 1,
   "Choosing the native tab must invoke the original Codex summary control exactly once.");
 assert.equal(closedNativeSummary.attributes.get("data-ds2007-native-right"), "open");
+
+const guardedNativeSummary = createFixture({
+  id: "qq2007-guarded-summary-transition",
+  mode: "deep",
+  appearance: "light",
+  art: { safeArea: "left", taskMode: "ambient" },
+}, { nativeSummaryRetained: true });
+vm.runInNewContext(guardedNativeSummary.payload, guardedNativeSummary.context);
+guardedNativeSummary.nativeSummaryToggle.click();
+assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right"), "open",
+  "Opening the native summary must reserve its layout before the native click changes anchor geometry.");
+assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right-layout"), "pending",
+  "Opening the native summary must preserve the full pending dock width.");
+guardedNativeSummary.nativeSummaryToggle.click();
+assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right"), "closed",
+  "Closing the native summary must release its layout before lingering DOM exits.");
+guardedNativeSummary.flushTimers(96);
+assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right"), "closed",
+  "A released summary must ignore its lingering exit-animation DOM.");
 
 const staleNativeRight = createFixture({
   id: "qq2007-stale-native-right",

@@ -91,9 +91,9 @@ assert.match(source, /result\.visualPass = bitmapIconPass && visualMaterialPass;
 assert.match(source, /conversationLegibilityPass[\s\S]{0,900}conversationPass/,
   "Live verification must reject unreadable reasoning, activity, tool-status, and timestamp text.");
 assert.match(source, /sidebarResizeHandle:[\s\S]{0,240}pointerEvents:/,
-  "Live verification must report whether the fixed QQ2007 sidebar handle can receive pointer input.");
-assert.match(source, /const sidebarPass = [\s\S]{0,260}result\.sidebarResizeHandle\.pointerEvents === 'none'[\s\S]{0,1400}result\.sidebarPass = sidebarPass/,
-  "Live verification must reject an interactive drag-to-collapse handle on the fixed QQ2007 sidebar.");
+  "Live verification must report whether the QQ2007 sidebar resize handle can receive pointer input.");
+assert.match(source, /const sidebarPass = [\s\S]{0,260}result\.sidebarResizeHandle\.pointerEvents === 'auto'[\s\S]{0,1400}result\.sidebarPass = sidebarPass/,
+  "Live verification must require an interactive native sidebar resize handle.");
 assert.match(source, /name === "dream-skin\.css" \|\| name === "renderer-inject\.js" \|\| name === "qq2007-icons\.png"/,
   "The live watcher must invalidate its static payload cache when the bitmap sprite changes.");
 assert.match(source, /friendSearch:[\s\S]*friendPet:[\s\S]*friendQqShow:/,
