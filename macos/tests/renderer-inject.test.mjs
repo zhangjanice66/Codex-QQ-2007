@@ -118,6 +118,8 @@ assert.match(
 );
 assert.match(template, /button\[aria-label="切换摘要"\]/,
   "Native summary popovers must trigger friend-panel arbitration.");
+assert.doesNotMatch(template, /pinNativeSummary/,
+  "The skin must not force the native summary into a separate pinned layout.");
 assert.match(template, /document\.querySelectorAll\?\.\(NATIVE_RIGHT_SIGNAL_SELECTOR\)/,
   "Native right-panel signals rendered in a portal must be detected outside the main shell.");
 assert.match(template, /document\.querySelectorAll\?\.\(NATIVE_RIGHT_PANEL_SELECTOR\)/,
@@ -236,13 +238,58 @@ assert.match(css, /@media \(max-width:\s*959px\)[\s\S]{0,220}grid-template-colum
   "Compact windows must keep only the 28px right recovery rail.");
 assert.match(
   css,
-  /data-ds2007-native-right-layout="floating"\][^{]*\.app-shell-main-content-frame\s*\{[^}]*box-sizing:\s*border-box !important;[^}]*padding-right:\s*calc\(var\(--ds2007-friend-width\) \+ 16px\) !important;/s,
-  "A floating native summary must reserve its full dock width instead of covering the conversation.",
+  /pointer-events-auto:has\(\[data-slot="thread-summary-panel-section-actions"\]\)\s*\{[^}]*width:\s*var\(--ds2007-friend-width\) !important;/s,
+  "The native summary must share the same responsive width token as the friend dock.",
 );
 assert.match(
   css,
-  /pointer-events-auto:has\(\[data-slot="thread-summary-panel-section-actions"\]\)\s*\{[^}]*width:\s*var\(--ds2007-friend-width\) !important;/s,
-  "The native summary must share the same responsive width token as the friend dock.",
+  /body > div:has\(> \[data-slot="popover-content"\]\[data-ds2007-native-dock="true"\]\)\s*\{[^}]*position:\s*fixed !important;[^}]*top:\s*calc\(var\(--ds2007-title-height\) \+ var\(--ds2007-toolbar-height\) \+ 31px\) !important;[^}]*right:\s*5px !important;[^}]*bottom:\s*calc\(var\(--ds2007-status-height\) \+ 5px\) !important;[^}]*width:\s*calc\(var\(--ds2007-friend-width\) - 10px\) !important;[^}]*transform:\s*none !important;/s,
+  "A native environment popover must become the fixed content region of the QQ2007 right dock.",
+);
+assert.match(
+  css,
+  /\[data-slot="popover-content"\]\[data-ds2007-native-dock="true"\]\s*\{[^}]*height:\s*100% !important;[^}]*border-radius:\s*0 !important;[^}]*background:\s*var\(--ds2007-panel-material\) !important;[^}]*box-shadow:\s*none !important;/s,
+  "The docked environment surface must replace the rounded white popover background with QQ2007 panel material.",
+);
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="floating"\][^{]*\.ds2007-friends\s*\{[^}]*display:\s*flex;/,
+  "A docked environment panel must retain the shared QQ2007 tab header.",
+);
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="floating"\][^{]*\.ds2007-friends > :not\(header\.ds2007-right-tabs\)\s*\{[^}]*display:\s*none;/,
+  "Environment mode must hide friend content below the shared tab header.",
+);
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="pending"\][^{]*\.ds2007-friends\s*\{[^}]*display:\s*flex;/,
+  "The QQ2007 dock shell must appear before the native environment portal finishes mounting.",
+);
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="pinned"\][^{]*\.ds2007-friends\s*\{[^}]*display:\s*flex;/,
+  "A manually pinned environment summary must retain the shared QQ2007 tab header.",
+);
+assert.match(
+  css,
+  /\[data-ds2007-native-dock="pinned"\]\s*\{[^}]*position:\s*fixed !important;[^}]*top:\s*calc\(var\(--ds2007-title-height\) \+ var\(--ds2007-toolbar-height\) \+ 31px\) !important;[^}]*right:\s*5px !important;[^}]*bottom:\s*calc\(var\(--ds2007-status-height\) \+ 5px\) !important;[^}]*width:\s*calc\(var\(--ds2007-friend-width\) - 10px\) !important;/s,
+  "Pinned native summary content must occupy the same fixed QQ2007 dock geometry as a Popover.",
+);
+assert.doesNotMatch(
+  css,
+  /data-ds2007-native-right-layout="floating"\][^{]*\.app-shell-main-content-frame\s*\{[^}]*padding-right:/s,
+  "A portal dock must not reserve its width twice inside the conversation column.",
+);
+assert.match(
+  css,
+  /@media \(max-width:\s*959px\)[\s\S]*data-ds2007-native-right-layout="floating"\][^{]*body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 240px;[\s\S]*data-ds2007-native-right-layout="floating"\][^{]*aside\.app-shell-left-panel\s*\{[^}]*display:\s*none !important;/,
+  "Compact environment mode must keep a 240px dock and temporarily release the native left sidebar width.",
+);
+assert.match(
+  css,
+  /@media \(max-width:\s*959px\)[\s\S]*data-ds2007-native-right-layout="pinned"\][^{]*body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 240px;[\s\S]*data-ds2007-native-right-layout="pinned"\][^{]*aside\.app-shell-left-panel\s*\{[^}]*display:\s*none !important;/,
+  "Compact pinned-summary mode must use the same 240px dock and temporary left-sidebar release.",
 );
 assert.match(
   template,
@@ -446,6 +493,7 @@ function createFixture(theme, {
   taskName = "",
   nativeRightOpen = false,
   nativeSummaryOpen = false,
+  nativeSummaryPinned = false,
   nativeSummaryRetained = false,
   nativeSummaryText = "环境信息",
   transientDialogOpen = false,
@@ -462,6 +510,7 @@ function createFixture(theme, {
   let nextTimer = 1;
   let nextBlob = 1;
   const rootStyle = createStyleDeclaration();
+  const rootListeners = new Map();
   const root = {
     className: nativeShell === "dark" ? "electron-dark" : "electron-light",
     classList: createClassList(),
@@ -473,6 +522,13 @@ function createFixture(theme, {
     getAttribute(name) { return attributes.get(name) ?? null; },
     setAttribute(name, value) { attributes.set(name, String(value)); },
     removeAttribute(name) { attributes.delete(name); },
+    addEventListener(type, handler) {
+      if (!rootListeners.has(type)) rootListeners.set(type, new Set());
+      rootListeners.get(type).add(handler);
+    },
+    removeEventListener(type, handler) { rootListeners.get(type)?.delete(handler); },
+    listenerCount(type) { return rootListeners.get(type)?.size ?? 0; },
+    dispatch(type, event) { for (const handler of rootListeners.get(type) || []) handler(event); },
   };
   const body = {
     className: "",
@@ -541,9 +597,34 @@ function createFixture(theme, {
       return { left: 1000, right: 1260, top: 60, bottom: 760, width: 260, height: 700 };
     },
   };
+  const nativeSummaryPortalListeners = new Map();
+  const nativeSummaryPortalAttributes = new Map();
+  const nativeSummaryPortal = {
+    dataset: {},
+    contains(node) { return node === nativeSummaryPortal || node?.insideNativeDock === true; },
+    addEventListener(type, handler) {
+      if (!nativeSummaryPortalListeners.has(type)) nativeSummaryPortalListeners.set(type, new Set());
+      nativeSummaryPortalListeners.get(type).add(handler);
+    },
+    removeEventListener(type, handler) { nativeSummaryPortalListeners.get(type)?.delete(handler); },
+    listenerCount(type) { return nativeSummaryPortalListeners.get(type)?.size ?? 0; },
+    dispatch(type, event) {
+      for (const handler of nativeSummaryPortalListeners.get(type) || []) handler(event);
+    },
+    getAttribute(name) { return nativeSummaryPortalAttributes.get(name) ?? null; },
+    setAttribute(name, value) { nativeSummaryPortalAttributes.set(name, String(value)); },
+    removeAttribute(name) { nativeSummaryPortalAttributes.delete(name); },
+  };
   const nativeSummaryOwner = {
     parentElement: null,
     textContent: nativeSummaryText,
+    getAttribute(name) { return nativeSummaryPortalAttributes.get(`owner:${name}`) ?? null; },
+    setAttribute(name, value) { nativeSummaryPortalAttributes.set(`owner:${name}`, String(value)); },
+    removeAttribute(name) { nativeSummaryPortalAttributes.delete(`owner:${name}`); },
+    closest(selector) {
+      return selector.includes('[data-slot="popover-content"]') && !nativeSummaryPinned
+        ? nativeSummaryPortal : null;
+    },
     getBoundingClientRect() {
       return { left: 964, right: 1264, top: 120, bottom: 578, width: 300, height: 458 };
     },
@@ -568,7 +649,7 @@ function createFixture(theme, {
       summaryOpen = !summaryOpen;
     },
     getAttribute(name) {
-      if (name === "aria-label") return "切换置顶摘要";
+      if (name === "aria-label") return nativeSummaryPinned ? "切换置顶摘要" : "切换摘要";
       if (name === "aria-pressed") return summaryOpen ? "true" : "false";
       return null;
     },
@@ -691,9 +772,13 @@ function createFixture(theme, {
       querySelector(selector) {
         if (!childNodes.has(selector)) {
           const listeners = new Map();
+          const childAttributes = new Map();
           childNodes.set(selector, {
             dataset: {},
+            classList: createClassList(),
             textContent: "",
+            getAttribute(name) { return childAttributes.get(name) ?? null; },
+            setAttribute(name, value) { childAttributes.set(name, String(value)); },
             addEventListener(type, handler) {
               if (!listeners.has(type)) listeners.set(type, new Set());
               listeners.get(type).add(handler);
@@ -730,10 +815,17 @@ function createFixture(theme, {
     querySelector(selector) {
       if (selector === "main.main-surface" || selector === "main") return shellMain;
       if (selector === "aside.app-shell-left-panel") return sidebar;
+      if (selector.includes('[data-ds2007-native-dock="true"]')) {
+        return nativeSummaryPortal.getAttribute("data-ds2007-native-dock") === "true" ? nativeSummaryPortal : null;
+      }
       if (selector.includes('button[aria-label="切换置顶摘要"]')) return nativeSummaryToggle;
       return null;
     },
     querySelectorAll(selector) {
+      if (selector.includes("[data-ds2007-native-dock]")) {
+        return [nativeSummaryPortal, nativeSummaryOwner]
+          .filter((candidate) => candidate.getAttribute("data-ds2007-native-dock") !== null);
+      }
       if (rightOpen && selector.includes('[data-testid*="side-panel"]')) return [nativeRightPanel];
       if ((summaryOpen || nativeSummaryRetained) &&
         selector.includes('[data-slot="thread-summary-panel-section-actions"]')) {
@@ -869,6 +961,7 @@ function createFixture(theme, {
     nativeProjectButton,
     nativeRightPanel,
     nativeSummaryOwner,
+    nativeSummaryPortal,
     nativeSummarySignal,
     nativeSummaryToggle,
     transientDialog,
@@ -1036,27 +1129,63 @@ assert.equal(retainedHiddenSummary.attributes.get("data-ds2007-native-right"), "
 assert.equal(retainedHiddenSummary.attributes.get("data-ds2007-friends"), "expanded",
   "Friends must remain available when a retained output summary is hidden.");
 
+const floatingNativeSummary = createFixture({
+  id: "qq2007-floating-summary",
+  mode: "deep",
+  appearance: "light",
+  art: { safeArea: "left", taskMode: "ambient" },
+}, { nativeSummaryOpen: true, nativeSummaryText: "环境信息 来源 本地 文件" });
+vm.runInNewContext(floatingNativeSummary.payload, floatingNativeSummary.context);
+assert.equal(floatingNativeSummary.attributes.get("data-ds2007-native-right"), "open",
+  "A native summary must take over the QQ2007 right dock.");
+assert.equal(floatingNativeSummary.attributes.get("data-ds2007-native-right-layout"), "floating",
+  "A native summary popover must use the fixed QQ2007 portal dock.");
+assert.equal(floatingNativeSummary.nodes.get("codex-dream-skin-chrome")
+  .querySelector(".ds2007-native-tab-label").textContent, "环境信息",
+"Environment summaries must not be mislabeled as file details when their body mentions files.");
+const floatingChrome = floatingNativeSummary.nodes.get("codex-dream-skin-chrome");
+assert.equal(floatingChrome.querySelector('.ds2007-right-tab[data-action="native-panel"]').classList.contains("is-active"), true,
+  "The shared right-dock header must mark Environment as the selected tab while native content is open.");
+assert.equal(floatingChrome.querySelector('.ds2007-right-tab[data-action="friend-expand"]').classList.contains("is-active"), false,
+  "The friend tab must not remain selected behind an open environment panel.");
+assert.equal(floatingNativeSummary.nativeSummaryPortal.getAttribute("data-ds2007-native-dock"), "true",
+  "The original native environment portal must be marked as the dock surface without cloning it.");
+assert.equal(floatingNativeSummary.root.listenerCount("dismissableLayer.pointerDownOutside"), 1,
+  "A docked environment panel must stay open while the user interacts with the conversation.");
+let dockOutsidePrevented = false;
+floatingNativeSummary.root.dispatch("dismissableLayer.pointerDownOutside", {
+  detail: { originalEvent: { target: {} } },
+  preventDefault() { dockOutsidePrevented = true; },
+});
+assert.equal(dockOutsidePrevented, true,
+  "The document capture guard must prevent only the native dock dismissal event.");
+let dockInsidePrevented = false;
+floatingNativeSummary.root.dispatch("dismissableLayer.pointerDownOutside", {
+  detail: { originalEvent: { target: { insideNativeDock: true } } },
+  preventDefault() { dockInsidePrevented = true; },
+});
+assert.equal(dockInsidePrevented, false,
+  "Nested native controls inside the environment dock must retain their own dismissal behavior.");
+floatingChrome.actionTrigger("friend-expand").dispatch();
+floatingNativeSummary.flushTimers(96);
+assert.equal(floatingNativeSummary.nativeSummaryToggle.clickCount, 1,
+  "Choosing the friend tab must invoke the native close/unpin control exactly once.");
+assert.equal(floatingNativeSummary.attributes.get("data-ds2007-native-right"), "closed");
+assert.equal(floatingNativeSummary.attributes.get("data-ds2007-friends"), "expanded");
+
 const pinnedNativeSummary = createFixture({
   id: "qq2007-pinned-summary",
   mode: "deep",
   appearance: "light",
   art: { safeArea: "left", taskMode: "ambient" },
-}, { nativeSummaryOpen: true, nativeSummaryText: "环境信息 来源 本地 文件" });
+}, { nativeSummaryOpen: true, nativeSummaryPinned: true, nativeSummaryText: "环境信息 来源 本地 文件" });
 vm.runInNewContext(pinnedNativeSummary.payload, pinnedNativeSummary.context);
-assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-native-right"), "open",
-  "A persistent pinned summary must take over the QQ2007 right dock.");
 assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-native-right-layout"), "pinned",
-  "Pinned summaries must use the native dock instead of floating-popover styling.");
-assert.equal(pinnedNativeSummary.nodes.get("codex-dream-skin-chrome")
-  .querySelector(".ds2007-native-tab-label").textContent, "环境信息",
-"Environment summaries must not be mislabeled as file details when their body mentions files.");
-const pinnedChrome = pinnedNativeSummary.nodes.get("codex-dream-skin-chrome");
-pinnedChrome.actionTrigger("friend-expand").dispatch();
-pinnedNativeSummary.flushTimers(96);
-assert.equal(pinnedNativeSummary.nativeSummaryToggle.clickCount, 1,
-  "Choosing the friend tab must invoke the native close/unpin control exactly once.");
-assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-native-right"), "closed");
-assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-friends"), "expanded");
+  "A manually pinned native summary must remain detectable without pretending to be a Popover portal.");
+assert.equal(pinnedNativeSummary.nativeSummaryPortal.getAttribute("data-ds2007-native-dock"), null,
+  "Pinned summaries must not receive the floating portal marker in tests or production.");
+assert.equal(pinnedNativeSummary.nativeSummaryOwner.getAttribute("data-ds2007-native-dock"), "pinned",
+  "The original pinned summary owner must be marked as the fixed dock without being cloned.");
 
 const closedNativeSummary = createFixture({
   id: "qq2007-closed-summary",

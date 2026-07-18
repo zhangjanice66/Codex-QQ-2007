@@ -600,32 +600,15 @@
       candidate.getAttribute?.("aria-label") === label &&
       candidate.getAttribute?.("aria-pressed") === pressed))
     .find(Boolean);
-  const pinNativeSummary = (attempt = 0) => {
-    if (window[DISABLED_KEY] || window[STATE_KEY]?.installToken !== installToken) return false;
-    const pin = summaryToggleByState(["切换置顶摘要", "Toggle pinned summary"], "false");
-    if (pin) {
-      pin.click?.();
-      scheduleEnsure({ route: true, layout: false });
-      return true;
-    }
-    if (attempt >= 8) return false;
-    setTimeout(() => pinNativeSummary(attempt + 1), 40);
-    return true;
-  };
   const setNativeRightVisible = (visible) => {
     const pinLabels = ["切换置顶摘要", "Toggle pinned summary"];
     const summaryLabels = ["切换摘要", "Toggle summary"];
     if (visible) {
-      const pin = summaryToggleByState(pinLabels, "false");
-      if (pin) {
-        pin.click?.();
-        scheduleEnsure({ route: true, layout: false });
-        return true;
-      }
       const summary = summaryToggleByState(summaryLabels, "false");
-      if (!summary) return false;
-      summary.click?.();
-      pinNativeSummary();
+      const fallback = summaryToggleByState(pinLabels, "false");
+      const toggle = summary || fallback;
+      if (!toggle) return false;
+      toggle.click?.();
       scheduleEnsure({ route: true, layout: false });
       return true;
     }
@@ -721,6 +704,37 @@
         ? { owner, layout: structural ? "structural" : pinnedSummaryOpen ? "pinned" : "floating" }
         : null;
     }).find(Boolean) || null;
+  };
+  const markNativeRightDock = (root, nativeRightState) => {
+    const portal = nativeRightState?.owner?.closest?.('[data-slot="popover-content"]');
+    const pinnedOwner = !portal && nativeRightState?.layout === "pinned"
+      ? nativeRightState.owner : null;
+    const dock = portal || pinnedOwner;
+    for (const candidate of document.querySelectorAll?.("[data-ds2007-native-dock]") || []) {
+      if (candidate !== dock) candidate.removeAttribute?.("data-ds2007-native-dock");
+    }
+    if (!dock) return;
+    setAttribute(dock, "data-ds2007-native-dock", portal ? "true" : "pinned");
+    if (!portal) return;
+    const keepEnvironmentDockOpen = (event) => {
+      const dock = document.querySelector?.('[data-ds2007-native-dock="true"]');
+      const target = event.detail?.originalEvent?.target;
+      if (dock && (!target || !dock.contains?.(target))) event.preventDefault?.();
+    };
+    bindInteraction(
+      root,
+      "dismissableLayer.pointerDownOutside",
+      keepEnvironmentDockOpen,
+      "ds2007NativeDockPointerBound",
+      true,
+    );
+    bindInteraction(
+      root,
+      "dismissableLayer.focusOutside",
+      keepEnvironmentDockOpen,
+      "ds2007NativeDockFocusBound",
+      true,
+    );
   };
   const SIDEBAR_SECTIONS = new Map([
     ["置顶", "pinned"],
@@ -1031,6 +1045,8 @@
         statusbarName: chrome.querySelector(".ds2007-statusbar b"),
         profileSignature: chrome.querySelector(".ds2007-profile-signature"),
         toolbar: chrome.querySelector(".ds2007-toolbar"),
+        nativeTab: chrome.querySelector('.ds2007-right-tab[data-action="native-panel"]'),
+        friendTab: chrome.querySelector('.ds2007-right-tab[data-action="friend-expand"]'),
         nativeTabLabel: chrome.querySelector(".ds2007-native-tab-label"),
         nativeRailLabel: chrome.querySelector(".ds2007-native-rail-label"),
         nativeSkinToggle: chrome.querySelector(".ds2007-native-skin-toggle"),
@@ -1164,6 +1180,11 @@
     }
     const nativeRightState = readNativeRightState(shellMain);
     const nativeRightOpen = Boolean(nativeRightState);
+    markNativeRightDock(root, nativeRightState);
+    chromeParts.nativeTab?.classList?.toggle?.("is-active", nativeRightOpen);
+    chromeParts.friendTab?.classList?.toggle?.("is-active", !nativeRightOpen);
+    if (chromeParts.nativeTab) setAttribute(chromeParts.nativeTab, "aria-selected", nativeRightOpen ? "true" : "false");
+    if (chromeParts.friendTab) setAttribute(chromeParts.friendTab, "aria-selected", nativeRightOpen ? "false" : "true");
     setAttribute(root, "data-ds2007-native-right", nativeRightOpen ? "open" : "closed");
     setAttribute(root, "data-ds2007-native-right-layout", nativeRightState?.layout || "none");
     const activeNativeLabel = nativeRightLabel(nativeRightState?.owner);
