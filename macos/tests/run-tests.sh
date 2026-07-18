@@ -142,6 +142,27 @@ if /usr/bin/grep -E -q 'tree/main/windows/assets|blob/main/https://' "$REPACK_GU
   exit 1
 fi
 
+# The compact QQ2007 repository ships only its product guide. It must flatten
+# repository paths and remain repackable from inside the standalone archive.
+COMPACT_SOURCE="$TMP/compact-source"
+COMPACT_ROOT="$TMP/compact-root"
+COMPACT_REPACK="$TMP/compact-repack"
+/bin/mkdir -p "$COMPACT_SOURCE/scripts" "$COMPACT_SOURCE/docs" \
+  "$COMPACT_ROOT" "$COMPACT_REPACK"
+/bin/cp "$ROOT/scripts/prepare-standalone-docs.sh" "$COMPACT_SOURCE/scripts/"
+/bin/cp "$ROOT/../docs/CODEX-1907.md" "$COMPACT_SOURCE/docs/"
+/bin/cp "$ROOT/../NOTICE.md" "$COMPACT_SOURCE/NOTICE.md"
+"$COMPACT_SOURCE/scripts/prepare-standalone-docs.sh" "$COMPACT_ROOT"
+/usr/bin/grep -F -q 'cd /path/to/codex-dream-skin-studio' \
+  "$COMPACT_ROOT/docs/CODEX-1907.md"
+/usr/bin/grep -F -q '`presets/preset-codex-1907-deep/`' "$COMPACT_ROOT/NOTICE.md"
+/usr/bin/grep -F -q 'is not included in this standalone archive' "$COMPACT_ROOT/NOTICE.md"
+/bin/mkdir -p "$COMPACT_ROOT/scripts"
+/bin/cp "$ROOT/scripts/prepare-standalone-docs.sh" "$COMPACT_ROOT/scripts/"
+"$COMPACT_ROOT/scripts/prepare-standalone-docs.sh" "$COMPACT_REPACK"
+/usr/bin/cmp "$COMPACT_ROOT/docs/CODEX-1907.md" "$COMPACT_REPACK/docs/CODEX-1907.md"
+/usr/bin/cmp "$COMPACT_ROOT/NOTICE.md" "$COMPACT_REPACK/NOTICE.md"
+
 # SwiftBar attributes are line-based; unsafe engine paths must never be emitted
 # into bash= or param*= fields.
 UNSAFE_ENGINE="$TMP/unsafe\"engine"

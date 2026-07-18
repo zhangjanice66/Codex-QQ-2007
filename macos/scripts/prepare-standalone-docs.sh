@@ -19,6 +19,57 @@ else
       break
     fi
   done
+
+  # Codex QQ 2007 keeps only its product guide beside the macOS tree. Support
+  # both the source repository and an already-flattened standalone archive.
+  COMPACT_GUIDE=""
+  COMPACT_NOTICE=""
+  for candidate in "$SCRIPT_ROOT/docs" "$SCRIPT_ROOT/../docs"; do
+    candidate_notice="$(cd "$candidate/.." 2>/dev/null && pwd -P)/NOTICE.md" || true
+    if [ -f "$candidate/CODEX-1907.md" ] && [ -f "$candidate_notice" ]; then
+      COMPACT_GUIDE="$candidate/CODEX-1907.md"
+      COMPACT_NOTICE="$candidate_notice"
+      break
+    fi
+  done
+  if [ -z "$DOCS_SOURCE" ] && [ -n "$COMPACT_GUIDE" ]; then
+    COMPACT_TARGET="$ARCHIVE_ROOT/docs/CODEX-1907.md"
+    NOTICE_TARGET="$ARCHIVE_ROOT/NOTICE.md"
+    /bin/mkdir -p "$ARCHIVE_ROOT/docs"
+    if [ "$COMPACT_GUIDE" != "$COMPACT_TARGET" ]; then
+      /bin/cp "$COMPACT_GUIDE" "$COMPACT_TARGET"
+    fi
+    if [ "$COMPACT_NOTICE" != "$NOTICE_TARGET" ]; then
+      /bin/cp "$COMPACT_NOTICE" "$NOTICE_TARGET"
+    fi
+
+    temporary="${COMPACT_TARGET}.standalone"
+    /usr/bin/sed \
+      -e 's#^cd macos$#cd /path/to/codex-dream-skin-studio#' \
+      "$COMPACT_TARGET" > "$temporary"
+    /bin/mv "$temporary" "$COMPACT_TARGET"
+
+    temporary="${NOTICE_TARGET}.standalone"
+    /usr/bin/sed \
+      -e 's#`macos/LICENSE`#`LICENSE`#g' \
+      -e 's#`macos/presets/#`presets/#g' \
+      -e 's#`macos/assets/#`assets/#g' \
+      -e 's#`macos/scripts/#`scripts/#g' \
+      -e 's#`docs/images/codex-qq-2007-preview.png` is a user-authorized runtime screenshot included for repository documentation only\.#`docs/images/codex-qq-2007-preview.png` is a repository-only runtime screenshot and is not included in this standalone archive.#' \
+      "$NOTICE_TARGET" > "$temporary"
+    /bin/mv "$temporary" "$NOTICE_TARGET"
+
+    if /usr/bin/grep -E -q '(^cd macos$|`macos/(LICENSE|presets/|assets/|scripts/))' \
+      "$COMPACT_TARGET" "$NOTICE_TARGET"; then
+      printf 'Standalone QQ2007 documentation retains a repository-only macOS path.\n' >&2
+      exit 1
+    fi
+    /usr/bin/grep -F -q 'is not included in this standalone archive' "$NOTICE_TARGET" || {
+      printf 'Standalone NOTICE does not identify the repository-only preview.\n' >&2
+      exit 1
+    }
+    exit 0
+  fi
 fi
 [ -n "$DOCS_SOURCE" ] || {
   printf 'Could not locate the prompt documentation beside the macOS tree.\n' >&2
