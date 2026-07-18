@@ -661,6 +661,17 @@
     if (/(文件|file)/i.test(signature)) return "文件详情";
     return "Codex 信息";
   };
+  const readNativeRightState = (shellMain) => [
+    ...(document.querySelectorAll?.(NATIVE_RIGHT_PANEL_SELECTOR) || []),
+    ...(document.querySelectorAll?.(NATIVE_RIGHT_SIGNAL_SELECTOR) || []),
+  ].map((candidate) => {
+    if (candidate.closest?.(`#${CHROME_ID}`)) return false;
+    const structural = candidate.matches?.(NATIVE_RIGHT_PANEL_SELECTOR);
+    const owner = persistentNativeRightOwner(candidate, shellMain);
+    const box = owner?.getBoundingClientRect?.();
+    return owner && isVisiblyOpen(owner, shellMain) && box.width >= 220 && box.height >= 240
+      ? { owner, layout: structural ? "structural" : "floating" } : null;
+  }).find(Boolean) || null;
   const SIDEBAR_SECTIONS = new Map([
     ["置顶", "pinned"],
     ["项目", "projects"],
@@ -1047,11 +1058,14 @@
     ) || []) {
       bindInteraction(trigger, "click", () => {
         const action = trigger.getAttribute?.("data-action");
+        const currentNativeRightState = readNativeRightState(shellMain);
+        setAttribute(root, "data-ds2007-native-right", currentNativeRightState ? "open" : "closed");
+        setAttribute(root, "data-ds2007-native-right-layout", currentNativeRightState?.layout || "none");
         if (action === "native-panel") {
-          if (root.getAttribute("data-ds2007-native-right") !== "open") setNativeRightVisible(true);
+          if (!currentNativeRightState) setNativeRightVisible(true);
           return;
         }
-        if (action === "friend-expand" && root.getAttribute("data-ds2007-native-right") === "open") {
+        if (action === "friend-expand" && currentNativeRightState) {
           setNativeRightVisible(false);
         }
         const next = action === "friend-expand" ? "expanded"
@@ -1095,17 +1109,7 @@
     } else {
       conversationLabel?.remove?.();
     }
-    const nativeRightState = [
-      ...(document.querySelectorAll?.(NATIVE_RIGHT_PANEL_SELECTOR) || []),
-      ...(document.querySelectorAll?.(NATIVE_RIGHT_SIGNAL_SELECTOR) || []),
-    ].map((candidate) => {
-        if (candidate.closest?.(`#${CHROME_ID}`)) return false;
-        const structural = candidate.matches?.(NATIVE_RIGHT_PANEL_SELECTOR);
-        const owner = persistentNativeRightOwner(candidate, shellMain);
-        const box = owner?.getBoundingClientRect?.();
-        return owner && isVisiblyOpen(owner, shellMain) && box.width >= 220 && box.height >= 240
-          ? { owner, layout: structural ? "structural" : "floating" } : null;
-      }).find(Boolean) || null;
+    const nativeRightState = readNativeRightState(shellMain);
     const nativeRightOpen = Boolean(nativeRightState);
     setAttribute(root, "data-ds2007-native-right", nativeRightOpen ? "open" : "closed");
     setAttribute(root, "data-ds2007-native-right-layout", nativeRightState?.layout || "none");

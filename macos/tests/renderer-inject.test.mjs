@@ -428,6 +428,7 @@ function createFixture(theme, {
   transientDialogOpen = false,
 } = {}) {
   let fixtureShell = nativeShell;
+  let rightOpen = nativeRightOpen;
   let summaryOpen = nativeSummaryOpen;
   const nodes = new Map();
   const attributes = new Map();
@@ -702,7 +703,7 @@ function createFixture(theme, {
       return null;
     },
     querySelectorAll(selector) {
-      if (nativeRightOpen && selector.includes('[data-testid*="side-panel"]')) return [nativeRightPanel];
+      if (rightOpen && selector.includes('[data-testid*="side-panel"]')) return [nativeRightPanel];
       if (summaryOpen && selector.includes('[data-slot="thread-summary-panel-section-actions"]')) {
         return [nativeSummarySignal];
       }
@@ -847,6 +848,7 @@ function createFixture(theme, {
     sidebar,
     timers,
     window,
+    setNativeRightOpen(value) { rightOpen = value; },
     setNativeShell(value) { fixtureShell = value; },
   };
 }
@@ -1023,6 +1025,25 @@ closedNativeSummary.flushTimers(96);
 assert.equal(closedNativeSummary.nativeSummaryToggle.clickCount, 1,
   "Choosing the native tab must invoke the original Codex summary control exactly once.");
 assert.equal(closedNativeSummary.attributes.get("data-ds2007-native-right"), "open");
+
+const staleNativeRight = createFixture({
+  id: "qq2007-stale-native-right",
+  mode: "deep",
+  appearance: "light",
+  art: { safeArea: "left", taskMode: "ambient" },
+}, { nativeRightOpen: true });
+vm.runInNewContext(staleNativeRight.payload, staleNativeRight.context);
+staleNativeRight.setNativeRightOpen(false);
+const staleNativeChrome = staleNativeRight.nodes.get("codex-dream-skin-chrome");
+staleNativeChrome.actionTrigger("friend-expand").dispatch();
+assert.equal(staleNativeRight.attributes.get("data-ds2007-native-right"), "closed",
+  "The friend tab must clear stale native-right state when the original panel has already disappeared.");
+assert.equal(staleNativeRight.attributes.get("data-ds2007-friends"), "expanded",
+  "The friend dock must expand immediately after a stale native panel disappears.");
+staleNativeRight.attributes.set("data-ds2007-native-right", "open");
+staleNativeChrome.actionTrigger("native-panel").dispatch();
+assert.equal(staleNativeRight.nativeSummaryToggle.clickCount, 1,
+  "The native tab must reopen Codex controls instead of trusting stale native-right state.");
 
 // Auto appearance must continue following the native shell after the skin is
 // already installed. The fixture makes the injected root color-scheme win
