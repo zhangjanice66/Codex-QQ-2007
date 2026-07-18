@@ -669,7 +669,8 @@
     const structural = candidate.matches?.(NATIVE_RIGHT_PANEL_SELECTOR);
     const owner = persistentNativeRightOwner(candidate, shellMain);
     const box = owner?.getBoundingClientRect?.();
-    return owner && isVisiblyOpen(owner, shellMain) && box.width >= 220 && box.height >= 240
+    return owner && isVisiblyOpen(candidate, shellMain) && isVisiblyOpen(owner, shellMain) &&
+      box.width >= 220 && box.height >= 240
       ? { owner, layout: structural ? "structural" : "floating" } : null;
   }).find(Boolean) || null;
   const SIDEBAR_SECTIONS = new Map([

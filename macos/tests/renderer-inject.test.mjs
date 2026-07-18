@@ -424,6 +424,7 @@ function createFixture(theme, {
   taskName = "",
   nativeRightOpen = false,
   nativeSummaryOpen = false,
+  nativeSummaryRetained = false,
   nativeSummaryText = "环境信息",
   transientDialogOpen = false,
 } = {}) {
@@ -704,7 +705,8 @@ function createFixture(theme, {
     },
     querySelectorAll(selector) {
       if (rightOpen && selector.includes('[data-testid*="side-panel"]')) return [nativeRightPanel];
-      if (summaryOpen && selector.includes('[data-slot="thread-summary-panel-section-actions"]')) {
+      if ((summaryOpen || nativeSummaryRetained) &&
+        selector.includes('[data-slot="thread-summary-panel-section-actions"]')) {
         return [nativeSummarySignal];
       }
       if (selector.includes('button[aria-label="切换置顶摘要"]')) return [nativeSummaryToggle];
@@ -778,14 +780,15 @@ function createFixture(theme, {
     Blob,
     Uint8Array,
     atob,
-    getComputedStyle() {
+    getComputedStyle(node) {
       const skinShell = root.classList.contains("codex-dream-skin")
         ? (attributes.get("data-dream-shell") || "dark") : fixtureShell;
       return {
         colorScheme: skinShell,
         backgroundColor: fixtureShell === "dark" ? "rgb(24, 24, 27)" : "rgb(250, 250, 250)",
         display: "block",
-        visibility: "visible",
+        visibility: node === nativeSummarySignal && nativeSummaryRetained && !summaryOpen
+          ? "hidden" : "visible",
         opacity: "1",
       };
     },
@@ -990,6 +993,18 @@ const transientNativeDialog = createFixture({
 vm.runInNewContext(transientNativeDialog.payload, transientNativeDialog.context);
 assert.equal(transientNativeDialog.attributes.get("data-ds2007-native-right"), "closed",
   "A temporary dialog must not replace the persistent QQ2007 right dock.");
+
+const retainedHiddenSummary = createFixture({
+  id: "qq2007-retained-hidden-summary",
+  mode: "deep",
+  appearance: "light",
+  art: { safeArea: "left", taskMode: "ambient" },
+}, { nativeSummaryRetained: true, nativeSummaryText: "输出 PRD.md CONTEXT.md" });
+vm.runInNewContext(retainedHiddenSummary.payload, retainedHiddenSummary.context);
+assert.equal(retainedHiddenSummary.attributes.get("data-ds2007-native-right"), "closed",
+  "A hidden retained output summary must not take over the QQ2007 right dock.");
+assert.equal(retainedHiddenSummary.attributes.get("data-ds2007-friends"), "expanded",
+  "Friends must remain available when a retained output summary is hidden.");
 
 const pinnedNativeSummary = createFixture({
   id: "qq2007-pinned-summary",
