@@ -16,6 +16,8 @@ The generated files under `macos/presets/preset-codex-1907-deep/` are fictional 
 
 The bitmap sprite `macos/assets/qq2007-icons.png` is generated from project-original pixel primitives by `macos/scripts/generate-qq2007-icons.mjs`.
 
+`docs/images/codex-qq-2007-preview.png` is a user-authorized runtime screenshot included for repository documentation only. It contains application UI and must not be imported or redistributed as a theme background.
+
 ## Runtime
 
 The project does not redistribute Codex Desktop or Node.js. It validates and uses the Node.js runtime signed and bundled inside the user's official Codex application. Theme injection uses a loopback-only Chromium DevTools Protocol endpoint and does not modify the official application bundle or code signature.

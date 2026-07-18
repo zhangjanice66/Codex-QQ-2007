@@ -23,6 +23,18 @@
 - 昵称、签名、等级、状态、宠物和 QQ 秀可本地个性化
 - 一键验证与一键恢复官方外观
 
+## 效果预览
+
+<p align="center">
+  <img src="docs/images/codex-qq-2007-preview.png" alt="Codex QQ 2007 深度仿制版实机效果" width="1000">
+</p>
+
+<p align="center">
+  <sub>macOS 实机截图：XP Luna 标题栏、QQ2007 工具栏、原生项目与输入区、Codex 好友和 QQ 秀。</sub>
+</p>
+
+> 这是一张包含 Codex 界面的效果截图，仅用于 README 展示，不能作为主题背景导入。可安装的纯背景位于 `macos/presets/preset-codex-1907-deep/`。
+
 ## 安装
 
 先正常启动一次 Codex，随后完全退出 Codex：
