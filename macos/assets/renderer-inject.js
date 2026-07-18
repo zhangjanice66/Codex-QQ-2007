@@ -1080,6 +1080,7 @@
       || (projectControlName === "选择项目" ? "" : projectControlName)
       || "未选择项目";
     setTextContent(chromeParts.windowTitle, `Codex 2007 - ${contextName}`);
+    const conversationLabelHost = shellMain.querySelector?.(".app-shell-main-content-viewport") || shellMain;
     let conversationLabel = shellMain.querySelector?.(".ds2007-conversation-label");
     if (taskName) {
       if (!conversationLabel) {
@@ -1087,8 +1088,8 @@
         conversationLabel.className = "ds2007-conversation-label";
         conversationLabel.setAttribute("aria-hidden", "true");
       }
-      if (conversationLabel.parentElement !== shellMain) {
-        shellMain.appendChild(conversationLabel);
+      if (conversationLabel.parentElement !== conversationLabelHost) {
+        conversationLabelHost.appendChild(conversationLabel);
       }
       setTextContent(conversationLabel, taskName);
     } else {

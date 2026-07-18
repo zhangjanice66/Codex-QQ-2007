@@ -476,6 +476,13 @@ function createFixture(theme, {
       return [];
     },
   };
+  const mainContentViewport = {
+    children: [],
+    appendChild(node) {
+      node.parentElement = mainContentViewport;
+      mainContentViewport.children.push(node);
+    },
+  };
   const shellMain = {
     children: [],
     classList: createClassList(),
@@ -488,8 +495,10 @@ function createFixture(theme, {
     },
     querySelector(selector) {
       if (selector === ":scope > header.app-header-tint") return nativeHeader;
+      if (selector === ".app-shell-main-content-viewport") return mainContentViewport;
       if (selector === ".ds2007-conversation-label") {
-        return shellMain.children.find((node) => node.className === "ds2007-conversation-label") || null;
+        return [...shellMain.children, ...mainContentViewport.children]
+          .find((node) => node.className === "ds2007-conversation-label") || null;
       }
       return null;
     },
@@ -819,6 +828,7 @@ function createFixture(theme, {
     revokedUrls,
     resizeObservers,
     mediaQuery,
+    mainContentViewport,
     navActions,
     newTaskHost,
     nativeHeader,
@@ -942,7 +952,8 @@ assert.equal(qq2007.nodes.get("codex-dream-skin-chrome").querySelector(".ds2007-
 assert.equal(qq2007.shellMain.querySelector(".ds2007-conversation-label")?.textContent,
   "规划怀旧QQ风格换肤", "Task routes must show the selected task name in the conversation header.");
 assert.equal(qq2007.shellMain.querySelector(".ds2007-conversation-label")?.parentElement,
-  qq2007.shellMain, "The selected task label must stay inside the central conversation panel.");
+  qq2007.mainContentViewport,
+  "The selected task label must stay inside the conversation column when a native right panel is open.");
 qq2007.nativeTaskTitle.textContent = "命名并描述项目仓库";
 qq2007.observers[0].callback([
   { type: "attributes", target: qq2007.activeTaskRow, addedNodes: [], removedNodes: [] },
