@@ -1414,6 +1414,21 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel 
   scrollbar-width: thin;
   scrollbar-color: #87a9ca transparent;
 }
+html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel [data-qq2007-styled="panel"] {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  border: 1px solid var(--ds2007-panel-edge) !important;
+  border-radius: 0 !important;
+  background: var(--ds2007-panel-material) !important;
+  box-shadow: inset 0 1px #fff !important;
+}
+html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel
+  [data-qq2007-styled="panel"][data-qq2007-section="pinned"] {
+  width: calc(100% + 16px) !important;
+  margin-left: -8px !important;
+}
 html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel button,
 html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel a,
 html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel [role="button"] {
@@ -1441,9 +1456,9 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel 
   display: flex !important;
   align-items: center !important;
   box-sizing: border-box !important;
-  margin: 1px 0 !important;
+  margin: 0 !important;
   padding: 0 5px !important;
-  border-top: 1px solid #7c9fc2 !important;
+  border: 0 !important;
   border-bottom: 1px solid #7c9fc2 !important;
   border-radius: 0 !important;
   background: var(--ds2007-header-material) !important;
@@ -1453,6 +1468,8 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel 
   cursor: default;
 }
 html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel [data-qq2007-styled="section"] {
+  display: flex !important;
+  align-items: center !important;
   height: 25px !important;
   min-height: 25px !important;
   margin: 0 !important;
@@ -1462,6 +1479,10 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel 
   box-shadow: none !important;
   color: #28577f !important;
   font: 700 11px/1 Tahoma, "Microsoft YaHei", sans-serif !important;
+}
+html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel [data-qq2007-styled="section"] svg {
+  order: 2;
+  margin-left: auto;
 }
 html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
   height: 27px !important;

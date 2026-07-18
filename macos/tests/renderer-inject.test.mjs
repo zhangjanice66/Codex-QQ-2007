@@ -185,8 +185,17 @@ assert.match(css, /aside\.app-shell-left-panel > div:first-child[\s\S]{0,380}wid
   "The native sidebar content must fill the whole QQ2007 panel without a blank rail.");
 assert.match(css, /\[data-app-action-sidebar-scroll\][\s\S]{0,240}overflow-y:\s*auto !important;/,
   "Only the native sidebar list should own vertical scrolling.");
-assert.match(css, /\[data-app-action-sidebar-section\] \[class\*="group\/nav-section-title"\][\s\S]{0,420}border-top:\s*1px solid[\s\S]{0,120}border-bottom:\s*1px solid[\s\S]{0,260}var\(--ds2007-header-material\)/,
-  "Each native sidebar section must own one compact QQ2007 title bar.");
+assert.match(
+  css,
+  /\[data-qq2007-styled="panel"\]\s*\{[^}]*margin:\s*0 !important;[^}]*border:\s*1px solid var\(--ds2007-panel-edge\) !important;[^}]*background:\s*var\(--ds2007-panel-material\) !important;/s,
+  "Each native sidebar group must render as one bordered QQ2007 panel with natural content height.",
+);
+assert.match(css, /\[data-qq2007-styled="panel"\]\[data-qq2007-section="pinned"\]\s*\{[^}]*width:\s*calc\(100% \+ 16px\) !important;[^}]*margin-left:\s*-8px !important;/s,
+  "The natively inset pinned group must align with the project and task panel edges.");
+assert.match(css, /\[data-app-action-sidebar-section\] \[class\*="group\/nav-section-title"\][\s\S]{0,420}margin:\s*0 !important;[\s\S]{0,160}border:\s*0 !important;[\s\S]{0,120}border-bottom:\s*1px solid[\s\S]{0,260}var\(--ds2007-header-material\)/,
+  "Each native sidebar panel must own one contiguous QQ2007 title bar.");
+assert.match(css, /\[data-qq2007-styled="section"\] svg\s*\{[^}]*order:\s*2;[^}]*margin-left:\s*auto;/s,
+  "Native section chevrons must remain visible at the right edge of each title bar.");
 assert.match(css, /\[data-app-action-sidebar-project-list-id\] \[data-app-action-sidebar-thread-row\][\s\S]{0,160}padding-left:[^;]*\+ 18px\)/,
   "Native conversation rows must remain visibly nested under their project.");
 assert.match(css, /\[data-app-action-sidebar-thread-active="true"\][\s\S]{0,180}var\(--ds2007-selection-material\)/,
@@ -665,12 +674,18 @@ function createFixture(theme, {
       return { left: 680, right: 1040, top: 180, bottom: 580, width: 360, height: 400 };
     },
   };
-  const sectionButtons = ["置顶", "项目", "任务"].map((label) => ({
+  const sectionPanels = ["置顶", "项目", "任务"].map(() => ({
+    dataset: {},
+  }));
+  const sectionButtons = ["置顶", "项目", "任务"].map((label, index) => ({
     nodeType: 1,
     dataset: {},
     classList: createClassList(),
     textContent: label,
     children: [{ textContent: label }],
+    closest(selector) {
+      return selector === "[data-app-action-sidebar-section]" ? sectionPanels[index] : null;
+    },
     removeAttribute(name) {
       if (name === "data-qq2007-styled") delete this.dataset.qq2007Styled;
       if (name === "data-qq2007-section") delete this.dataset.qq2007Section;
@@ -969,6 +984,7 @@ function createFixture(theme, {
     root,
     rootStyle,
     sectionButtons,
+    sectionPanels,
     shellBox,
     shellMain,
     sidebar,
@@ -1010,6 +1026,9 @@ assert.equal(defaultMetrics.routePasses, 1, "Window resize must not trigger a fu
 assert.deepEqual(defaults.sectionButtons.map((button) => button.dataset.qq2007Styled),
   ["section", "section", "section"],
   "Native section-toggle buttons must receive one-time styling even when their child owns the label text.");
+assert.deepEqual(defaults.sectionPanels.map((panel) => panel.dataset.qq2007Styled),
+  ["panel", "panel", "panel"],
+  "Each native sidebar section must expose one semantic QQ2007 panel boundary.");
 const addedRouteNode = {
   nodeType: 1,
   id: "",

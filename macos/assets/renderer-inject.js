@@ -766,12 +766,18 @@
     if (node.matches?.('button[class*="group/section-toggle"]')) candidates.push(node);
     candidates.push(...(node.querySelectorAll?.('button[class*="group/section-toggle"]') || []));
     for (const candidate of candidates) {
-      if (candidate.dataset?.qq2007Styled) continue;
       const label = normalizedLabel(candidate);
       const section = SIDEBAR_SECTIONS.get(label);
       if (!section) continue;
-      candidate.dataset.qq2007Styled = "section";
-      candidate.dataset.qq2007Section = section;
+      if (!candidate.dataset?.qq2007Styled) {
+        candidate.dataset.qq2007Styled = "section";
+        candidate.dataset.qq2007Section = section;
+      }
+      const panel = candidate.closest?.("[data-app-action-sidebar-section]");
+      if (panel) {
+        panel.dataset.qq2007Styled = "panel";
+        panel.dataset.qq2007Section = section;
+      }
     }
     if (node === sidebar) sidebar.dataset.qq2007Styled = "sidebar";
   };
