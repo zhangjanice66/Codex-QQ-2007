@@ -41,6 +41,27 @@ cd Codex-QQ-2007/macos
 
 安装脚本会在桌面创建启动、定制、验证和恢复入口。也可以直接双击 `macos/Install Codex Dream Skin.command`。
 
+### 上面三条脚本分别做什么
+
+| 命令 | 作用 | 是否立即改变 Codex 界面 |
+|------|------|------------------------|
+| `install-dream-skin-macos.sh --no-launch` | 安装换肤引擎，但不启动 Codex | 否 |
+| `switch-theme-macos.sh --id preset-codex-1907-deep --no-apply` | 把“当前选中的主题”设为 QQ2007 深度预设 | 否，只保存选择 |
+| `start-dream-skin-macos.sh --restart-existing` | 用换肤引擎启动 Codex，并应用刚才选中的主题 | 是 |
+
+其中 `--no-apply` 的含义是“只选择主题，暂时不应用”。它适合首次安装：先确定主题，再由下一条 `start-dream-skin-macos.sh` 统一启动和应用。
+
+如果 Codex 已经通过换肤引擎启动，可以省略 `--no-apply`，直接热切换主题：
+
+```bash
+~/.codex/codex-dream-skin-studio/scripts/switch-theme-macos.sh \
+  --id preset-codex-1907-deep
+```
+
+这时脚本会保存主题并立即刷新正在运行的 Codex；通常不需要重启。
+
+> `switch-theme-macos.sh` 负责选择主题包；界面顶部的「换肤」按钮负责在同一个 QQ2007 主题包内切换“深度仿制版 / 原版 Codex”。这是两个不同层级的操作。
+
 ## 换肤
 
 深度仿制版顶部工具栏的「换肤」进入原版 Codex。原版左上角保留一个小型「换肤」按钮，用于返回深度仿制版。选择保存在本机，应用重启和热重载后仍然有效。
