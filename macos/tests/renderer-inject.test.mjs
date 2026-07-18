@@ -194,6 +194,11 @@ assert.match(css, /\[data-qq2007-styled="panel"\]\[data-qq2007-section="pinned"\
   "The natively inset pinned group must align with the project and task panel edges.");
 assert.match(css, /\[data-app-action-sidebar-section\] \[class\*="group\/nav-section-title"\][\s\S]{0,420}margin:\s*0 !important;[\s\S]{0,160}border:\s*0 !important;[\s\S]{0,120}border-bottom:\s*1px solid[\s\S]{0,260}var\(--ds2007-header-material\)/,
   "Each native sidebar panel must own one contiguous QQ2007 title bar.");
+assert.match(
+  css,
+  /\[data-qq2007-styled="panel"\]:is\(\[data-qq2007-section="projects"\], \[data-qq2007-section="tasks"\]\)\s*\[class\*="group\/nav-section-title"\]\s*\{[^}]*width:\s*calc\(100% \+ 16px\) !important;[^}]*margin-inline:\s*-8px !important;/s,
+  "Project and task title bars must bridge their native 8px panel padding.",
+);
 assert.match(css, /\[data-qq2007-styled="section"\] svg\s*\{[^}]*order:\s*2;[^}]*margin-left:\s*auto;/s,
   "Native section chevrons must remain visible at the right edge of each title bar.");
 assert.match(css, /\[data-app-action-sidebar-project-list-id\] \[data-app-action-sidebar-thread-row\][\s\S]{0,160}padding-left:[^;]*\+ 18px\)/,

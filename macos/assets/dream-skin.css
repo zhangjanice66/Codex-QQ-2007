@@ -1467,6 +1467,12 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel 
   font: 700 11px/1 Tahoma, "Microsoft YaHei", sans-serif !important;
   cursor: default;
 }
+html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel
+  [data-qq2007-styled="panel"]:is([data-qq2007-section="projects"], [data-qq2007-section="tasks"])
+  [class*="group/nav-section-title"] {
+  width: calc(100% + 16px) !important;
+  margin-inline: -8px !important;
+}
 html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel [data-qq2007-styled="section"] {
   display: flex !important;
   align-items: center !important;
