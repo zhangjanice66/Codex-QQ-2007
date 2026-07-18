@@ -9,7 +9,7 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "1.7.0";
+const SKIN_VERSION = "1.7.1";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -796,8 +796,10 @@ async function verifySession(session) {
       .filter((node) => !node.contains(composerNode))
       .sort((left, right) => right.getBoundingClientRect().height - left.getBoundingClientRect().height)[0] ?? null;
     const composerStickyNode = composerNode?.closest('.sticky') ?? null;
-    const nativeTaskTitleNode = [...(nativeHeaderNode?.querySelectorAll('span.min-w-0.truncate') ?? [])]
-      .find((node) => (node.textContent || '').trim()) ?? null;
+    const nativeTaskTitleNode = shellNode?.querySelector('.ds2007-conversation-label') ??
+      [...(nativeHeaderNode?.querySelectorAll(
+        '[data-thread-title="true"], span.min-w-0.truncate',
+      ) ?? [])].find((node) => (node.textContent || '').trim()) ?? null;
     const allPreNodes = [...(threadScrollNode?.querySelectorAll('pre') ?? [])];
     const semanticCodeNodes = [...new Set([
       ...(threadScrollNode?.querySelectorAll('[data-markdown-copy="code-block"]') ?? []),
@@ -1359,6 +1361,7 @@ const ACCEPTANCE_REDACTION_CSS = `
   [data-app-action-sidebar-project-row] [class*="text"],
   [data-app-action-sidebar-thread-row] [class*="text"],
   main.main-surface > header.app-header-tint span.min-w-0.truncate,
+  .ds2007-conversation-label,
   .ds2007-window-title,
   aside.app-shell-left-panel button[aria-label="打开个人资料菜单"],
   aside.app-shell-left-panel button[aria-label="Open profile menu"] {

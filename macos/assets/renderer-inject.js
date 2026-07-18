@@ -1062,9 +1062,14 @@
     }
     const projectControl = home?.querySelector?.('.group\\/project-selector > button');
     const nativeHeaderNode = shellMain.querySelector?.(":scope > header.app-header-tint");
-    const nativeTaskTitle = [...(nativeHeaderNode?.querySelectorAll?.("span.min-w-0.truncate") || [])]
+    const nativeTaskTitle = [...(nativeHeaderNode?.querySelectorAll?.(
+      '[data-thread-title="true"], span.min-w-0.truncate',
+    ) || [])]
       .find((candidate) => normalizedLabel(candidate));
-    const taskName = normalizedLabel(nativeTaskTitle);
+    const activeTaskTitle = sidebar?.querySelector?.(
+      '[data-app-action-sidebar-thread-active="true"] [data-thread-title="true"]',
+    );
+    const taskName = normalizedLabel(nativeTaskTitle) || normalizedLabel(activeTaskTitle);
     const projectControlName = normalizedLabel(projectControl).replace(/^(选择项目|当前项目)[·：:\s]*/, "");
     const nativeProjectButton = [...(shellMain.querySelectorAll?.(":scope > header.app-header-tint button[aria-label]") || [])]
       .find((candidate) => /^(项目|Project)[：:]/i.test(candidate.getAttribute?.("aria-label") || ""));
@@ -1075,7 +1080,20 @@
       || (projectControlName === "选择项目" ? "" : projectControlName)
       || "未选择项目";
     setTextContent(chromeParts.windowTitle, `Codex 2007 - ${contextName}`);
-    shellMain.querySelector?.(":scope > header.app-header-tint .ds2007-conversation-label")?.remove?.();
+    let conversationLabel = shellMain.querySelector?.(".ds2007-conversation-label");
+    if (taskName) {
+      if (!conversationLabel) {
+        conversationLabel = document.createElement("span");
+        conversationLabel.className = "ds2007-conversation-label";
+        conversationLabel.setAttribute("aria-hidden", "true");
+      }
+      if (conversationLabel.parentElement !== shellMain) {
+        shellMain.appendChild(conversationLabel);
+      }
+      setTextContent(conversationLabel, taskName);
+    } else {
+      conversationLabel?.remove?.();
+    }
     const nativeRightState = [
       ...(document.querySelectorAll?.(NATIVE_RIGHT_PANEL_SELECTOR) || []),
       ...(document.querySelectorAll?.(NATIVE_RIGHT_SIGNAL_SELECTOR) || []),
@@ -1228,7 +1246,8 @@
     let routeChanged = false;
     let frameChanged = false;
     const routeSelector = `main.main-surface, [role="main"], aside.app-shell-left-panel, header.app-header-tint, ${NATIVE_RIGHT_PANEL_SELECTOR}, ${NATIVE_RIGHT_SIGNAL_SELECTOR}`;
-    const routeContextSelector = 'main.main-surface > header.app-header-tint, .group\\/project-selector';
+    const routeContextSelector = 'main.main-surface > header.app-header-tint, .group\\/project-selector, ' +
+      'aside.app-shell-left-panel [data-app-action-sidebar-thread-row]';
     for (const record of records) {
       if (record.type === "attributes" && record.target?.closest?.(routeContextSelector)) {
         routeChanged = true;
@@ -1314,7 +1333,8 @@
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["aria-label", "aria-current", "aria-pressed", "data-state"],
+    attributeFilter: ["aria-label", "aria-current", "aria-pressed", "data-state",
+      "data-app-action-sidebar-thread-active"],
     characterData: true,
   });
   rootObserver.observe(document.documentElement, {

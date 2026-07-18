@@ -471,18 +471,27 @@ function createFixture(theme, {
   const nativeHeader = {
     getBoundingClientRect() { return { left: 0, right: 1280, top: 0, bottom: 46, width: 1280, height: 46 }; },
     querySelectorAll(selector) {
-      if (selector.includes("span.min-w-0.truncate")) return taskName ? [nativeTaskTitle] : [];
+      if (selector.includes("span.min-w-0.truncate")) return [];
       if (selector.includes("button, a")) return projectName ? [nativeProjectButton] : [];
       return [];
     },
   };
   const shellMain = {
+    children: [],
     classList: createClassList(),
+    appendChild(node) {
+      node.parentElement = shellMain;
+      shellMain.children.push(node);
+    },
     getBoundingClientRect() {
       return { ...shellBox };
     },
     querySelector(selector) {
-      return selector === ":scope > header.app-header-tint" ? nativeHeader : null;
+      if (selector === ":scope > header.app-header-tint") return nativeHeader;
+      if (selector === ".ds2007-conversation-label") {
+        return shellMain.children.find((node) => node.className === "ds2007-conversation-label") || null;
+      }
+      return null;
     },
     querySelectorAll(selector) {
       return selector.includes("header.app-header-tint button[aria-label]") && projectName
@@ -563,6 +572,11 @@ function createFixture(theme, {
     parentElement: newTaskHost,
     getAttribute(name) { return name === "aria-label" ? "Quick chat" : null; },
   };
+  const activeTaskRow = {
+    closest(selector) {
+      return selector.includes("data-app-action-sidebar-thread-row") ? activeTaskRow : null;
+    },
+  };
   navActions.push(quickChat);
   const sidebar = {
     nodeType: 1,
@@ -571,6 +585,9 @@ function createFixture(theme, {
     matches(selector) { return selector === "aside.app-shell-left-panel"; },
     closest(selector) { return selector === "aside.app-shell-left-panel" ? sidebar : null; },
     querySelector(selector) {
+      if (selector.includes("data-app-action-sidebar-thread-active") && selector.includes("data-thread-title")) {
+        return taskName ? nativeTaskTitle : null;
+      }
       return selector.includes('aria-label="Quick chat"') ? quickChat : null;
     },
     querySelectorAll(selector) {
@@ -789,6 +806,7 @@ function createFixture(theme, {
   };
 
   return {
+    activeTaskRow,
     attributes,
     body,
     bodyAttributes,
@@ -803,6 +821,7 @@ function createFixture(theme, {
     mediaQuery,
     navActions,
     newTaskHost,
+    nativeHeader,
     nativeProjectButton,
     nativeRightPanel,
     nativeSummaryOwner,
@@ -814,6 +833,7 @@ function createFixture(theme, {
     rootStyle,
     sectionButtons,
     shellBox,
+    shellMain,
     sidebar,
     timers,
     window,
@@ -835,6 +855,8 @@ assert.equal(defaults.attributes.get("data-dream-art-ready"), "false");
 assert.equal(defaults.attributes.get("data-dream-skin-mode"), "classic");
 assert.match(css, /\.ds2007-titlebar,[\s\S]{0,120}display:\s*none/,
   "Classic fixtures rely on structural QQ2007 chrome being hidden by default.");
+assert.match(css, /\.ds2007-conversation-label\s*\{[^}]*background:/s,
+  "The selected task label must use the same QQ2007 header material as sidebar sections.");
 assert.equal(defaults.rootStyle.values.get("--dream-art-position"), "50.00% 50.00%");
 const defaultMetrics = defaults.window.__CODEX_DREAM_SKIN_STATE__.metrics;
 assert.equal(defaultMetrics.rootPasses, 1);
@@ -917,6 +939,17 @@ assert.match(qq2007.nodes.get("codex-dream-skin-chrome").innerHTML, /Codex 2007/
 assert.doesNotMatch(qq2007.nodes.get("codex-dream-skin-chrome").innerHTML, /ds1907-home-chat/);
 assert.equal(qq2007.nodes.get("codex-dream-skin-chrome").querySelector(".ds2007-window-title").textContent,
   "Codex 2007 - 规划怀旧QQ风格换肤", "The native task title must take precedence over the project name.");
+assert.equal(qq2007.shellMain.querySelector(".ds2007-conversation-label")?.textContent,
+  "规划怀旧QQ风格换肤", "Task routes must show the selected task name in the conversation header.");
+assert.equal(qq2007.shellMain.querySelector(".ds2007-conversation-label")?.parentElement,
+  qq2007.shellMain, "The selected task label must stay inside the central conversation panel.");
+qq2007.nativeTaskTitle.textContent = "命名并描述项目仓库";
+qq2007.observers[0].callback([
+  { type: "attributes", target: qq2007.activeTaskRow, addedNodes: [], removedNodes: [] },
+]);
+qq2007.flushTimers(64);
+assert.equal(qq2007.shellMain.querySelector(".ds2007-conversation-label")?.textContent,
+  "命名并描述项目仓库", "Switching the active sidebar task must refresh the conversation label.");
 assert.equal(qq2007.newTaskHost.dataset.ds2007GlobalNavSource, "聊天",
   "Fresh injection must de-duplicate the shared new-task and quick-chat host after legacy cleanup.");
 assert.deepEqual(qq2007.navActions.slice(1, 5).map((node) => node.dataset.ds2007GlobalNavSource),
@@ -932,6 +965,8 @@ const qq2007Project = createFixture({
 vm.runInNewContext(qq2007Project.payload, qq2007Project.context);
 assert.equal(qq2007Project.nodes.get("codex-dream-skin-chrome").querySelector(".ds2007-window-title").textContent,
   "Codex 2007 - dream-skin", "Project routes must use the native project name in the dynamic title.");
+assert.equal(qq2007Project.shellMain.querySelector(".ds2007-conversation-label"), null,
+  "Project routes must not show a conversation label without a selected task.");
 
 const transientNativeDialog = createFixture({
   id: "qq2007-transient-dialog",
