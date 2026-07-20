@@ -1493,6 +1493,7 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel 
 html.codex-dream-skin[data-dream-skin-mode="qq2007"] aside.app-shell-left-panel [data-app-action-sidebar-project-row] {
   height: 27px !important;
   min-height: 27px !important;
+  overflow-y: hidden !important;
   border-radius: 1px !important;
   font-size: 11px !important;
 }
