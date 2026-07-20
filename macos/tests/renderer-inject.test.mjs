@@ -187,6 +187,11 @@ assert.match(css, /\[data-app-action-sidebar-scroll\][\s\S]{0,240}overflow-y:\s*
   "Only the native sidebar list should own vertical scrolling.");
 assert.match(
   css,
+  /\[data-app-action-sidebar-project-row\]\s*\{[^}]*overflow-y:\s*hidden !important;/s,
+  "Native project rows must not expose inherited blue scrollbars.",
+);
+assert.match(
+  css,
   /\[data-qq2007-styled="panel"\]\s*\{[^}]*margin:\s*0 !important;[^}]*border:\s*1px solid var\(--ds2007-panel-edge\) !important;[^}]*background:\s*var\(--ds2007-panel-material\) !important;/s,
   "Each native sidebar group must render as one bordered QQ2007 panel with natural content height.",
 );

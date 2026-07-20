@@ -6,7 +6,7 @@
 
 ## 当前版本
 
-- 版本：`1.7.8`
+- 版本：`1.7.9`
 - 已测试：macOS 26.3、Apple M4、Codex Desktop 26.715.21425
 - 主预设：`preset-codex-1907-deep`
 - 视图：QQ2007 深度仿制 / 原版 Codex
