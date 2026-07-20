@@ -1263,6 +1263,15 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-titlebar {
   pointer-events: none;
 }
 
+.ds2007-title-drag-surface {
+  min-width: 0;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: drag;
+  pointer-events: auto;
+}
 .ds2007-title-icon { flex: 0 0 16px; }
 .ds2007-window-title {
   min-width: 0;
@@ -2085,6 +2094,7 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-statusbar {
   color: #fff;
   font: 10px/1 Tahoma, "Microsoft YaHei", sans-serif;
   pointer-events: none;
+  -webkit-app-region: drag;
 }
 .ds2007-status-current { color: #d9ffd1; }
 .ds2007-profile-signature {
