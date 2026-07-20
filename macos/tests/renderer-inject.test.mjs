@@ -161,11 +161,17 @@ assert.match(css, /data-dream-skin-mode="qq2007"[\s\S]{0,160}body\s*\{[\s\S]{0,3
 assert.match(css, /--ds2007-title-height:\s*46px/,
   "The custom title row must reserve the full native Codex header height.");
 assert.match(css, /\.ds2007-titlebar\s*\{[\s\S]{0,700}-webkit-app-region:\s*no-drag/,
-  "The titlebar must not turn the native window controls into a drag target.");
+  "The titlebar shell must preserve the dynamic native-control safe areas.");
+assert.doesNotMatch(css, /\.ds2007-titlebar\s*\{[^}]*position:\s*relative/s,
+  "The custom titlebar must not become a positioned layer above native header controls.");
+assert.match(css, /\.ds2007-title-drag-surface\s*\{[^}]*flex:\s*1 1 auto[^}]*-webkit-app-region:\s*drag/s,
+  "The titlebar center surface must provide one continuous native window drag region.");
+assert.match(visualChromeMarkup, /<header class="ds2007-titlebar"><span class="ds2007-title-drag-surface">[\s\S]*ds2007-title-icon[\s\S]*ds2007-window-title[\s\S]*<\/span><\/header>/,
+  "The draggable title surface must wrap the title icon and text without covering native controls.");
 assert.match(css, /\.ds2007-window-title\s*\{[^}]*min-width:\s*0[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap[^}]*-webkit-app-region:\s*drag/s,
   "The protected title text region must remain draggable and truncate on one line.");
-assert.match(css, /\.ds2007-statusbar\s*\{[\s\S]{0,600}pointer-events:\s*none/,
-  "The decorative status row must not intercept native interactions.");
+assert.match(css, /\.ds2007-statusbar\s*\{[\s\S]{0,600}pointer-events:\s*none;[\s\S]{0,80}-webkit-app-region:\s*drag/,
+  "The decorative status row must drag the window without intercepting native interactions.");
 assert.doesNotMatch(css, /@media \(max-width:\s*840px\)[\s\S]{0,500}\.ds2007-toolbar > button span\s*\{\s*display:\s*none/,
   "Responsive layouts must retain the six primary toolbar labels.");
 assert.match(css, /aside\.app-shell-left-panel\s*\{[\s\S]{0,500}overflow:\s*visible !important;/,

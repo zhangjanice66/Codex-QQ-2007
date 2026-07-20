@@ -988,7 +988,7 @@
     if (!shellMain || !document.body) return;
     shellMain.classList.toggle("dream-skin-home-shell", Boolean(home));
     let chrome = document.getElementById(CHROME_ID);
-    if (chrome && chrome.dataset.ds2007Revision !== "15") {
+    if (chrome && chrome.dataset.ds2007Revision !== "16") {
       chrome.remove();
       chrome = null;
       chromeParts = null;
@@ -999,7 +999,7 @@
       chrome = document.createElement("div");
       chrome.id = CHROME_ID;
       chrome.innerHTML = `
-        <header class="ds2007-titlebar"><span class="ds2007-icon ds2007-icon--mascot ds2007-title-icon" aria-hidden="true"></span><b class="ds2007-window-title">Codex 2007</b></header>
+        <header class="ds2007-titlebar"><span class="ds2007-title-drag-surface"><span class="ds2007-icon ds2007-icon--mascot ds2007-title-icon" aria-hidden="true"></span><b class="ds2007-window-title">Codex 2007</b></span></header>
         <nav class="ds2007-toolbar" aria-label="Codex 2007 全局工具栏">
           <button data-nav="新建任务"><i class="ds2007-icon ds2007-icon--new-task" aria-hidden="true"></i><span>新建任务</span></button>
           <button data-nav="已安排"><i class="ds2007-icon ds2007-icon--scheduled" aria-hidden="true"></i><span>已安排</span></button>
@@ -1033,7 +1033,7 @@
         <div class="dream-skin-status"><i></i><span></span></div><div class="dream-skin-quote"></div>
         <div class="dream-skin-particles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="dream-skin-orbit"></div>`;
       document.body.appendChild(chrome);
-      chrome.dataset.ds2007Revision = "15";
+      chrome.dataset.ds2007Revision = "16";
       created = true;
       chromeParts = null;
     }
