@@ -4,9 +4,9 @@
 
 > 非 OpenAI、Tencent 或 QQ 官方项目。本项目不修改 Codex.app、`app.asar` 或代码签名。
 
-## 当前版本
+## 兼容性与默认配置
 
-- 版本：`1.7.9`
+- 最新稳定版：[GitHub Releases](https://github.com/zhangjanice66/Codex-QQ-2007/releases/latest)
 - 已测试：macOS 26.3、Apple M4、Codex Desktop 26.715.21425
 - 主预设：`preset-codex-1907-deep`
 - 视图：QQ2007 深度仿制 / 原版 Codex
