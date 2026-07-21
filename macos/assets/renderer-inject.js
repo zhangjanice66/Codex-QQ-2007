@@ -741,6 +741,7 @@
     ["项目", "projects"],
     ["展开显示", "expanded"],
     ["任务", "tasks"],
+    ["最近", "recents"],
   ]);
 
   const clearSidebarMarker = (node) => {
@@ -1113,7 +1114,7 @@
       destination?.click?.();
     }, "bridgeBound");
     bindNativeSkinRestore(chromeParts.nativeSkinToggle);
-    if (sidebar && (created || sidebar.dataset?.qq2007Styled !== "sidebar")) {
+    if (sidebar) {
       if (created) cleanupLegacySidebarArtifacts(sidebar);
       styleSidebarSubtree(sidebar);
     }

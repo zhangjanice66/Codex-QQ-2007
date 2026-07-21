@@ -154,6 +154,8 @@ assert.doesNotMatch(template, /document\.querySelectorAll\("button, a, input"\)/
   "Secondary toolbar bridges must use stable native attributes instead of a full-page text scan.");
 assert.match(template, /host\.dataset\.ds2007GlobalNavSource = label/,
   "Native global actions must remain in place as the functional source for toolbar forwarding.");
+assert.match(template, /if \(sidebar\) \{[\s\S]{0,120}if \(created\) cleanupLegacySidebarArtifacts\(sidebar\);[\s\S]{0,80}styleSidebarSubtree\(sidebar\);/,
+  "Route synchronization must refresh bounded sidebar markers after a hot upgrade.");
 assert.match(css, /\[data-ds2007-global-nav-source\]\s*\{\s*display:\s*none !important;/,
   "Native global action rows must be visually de-duplicated in deep mode.");
 assert.match(css, /data-dream-skin-mode="qq2007"[\s\S]{0,160}body\s*\{[\s\S]{0,300}display:\s*grid !important;/,
@@ -207,8 +209,8 @@ assert.match(css, /\[data-app-action-sidebar-section\] \[class\*="group\/nav-sec
   "Each native sidebar panel must own one contiguous QQ2007 title bar.");
 assert.match(
   css,
-  /\[data-qq2007-styled="panel"\]:is\(\[data-qq2007-section="projects"\], \[data-qq2007-section="tasks"\]\)\s*\[class\*="group\/nav-section-title"\]\s*\{[^}]*width:\s*calc\(100% \+ 16px\) !important;[^}]*margin-inline:\s*-8px !important;/s,
-  "Project and task title bars must bridge their native 8px panel padding.",
+  /\[data-qq2007-styled="panel"\]:is\(\[data-qq2007-section="projects"\], \[data-qq2007-section="tasks"\], \[data-qq2007-section="recents"\]\)\s*\[class\*="group\/nav-section-title"\]\s*\{[^}]*width:\s*calc\(100% \+ 16px\) !important;[^}]*margin-inline:\s*-8px !important;/s,
+  "Project, task, and recent title bars must bridge their native 8px panel padding.",
 );
 assert.match(css, /\[data-qq2007-styled="section"\] svg\s*\{[^}]*order:\s*2;[^}]*margin-left:\s*auto;/s,
   "Native section chevrons must remain visible at the right edge of each title bar.");
@@ -690,10 +692,10 @@ function createFixture(theme, {
       return { left: 680, right: 1040, top: 180, bottom: 580, width: 360, height: 400 };
     },
   };
-  const sectionPanels = ["置顶", "项目", "任务"].map(() => ({
+  const sectionPanels = ["置顶", "项目", "任务", "最近"].map(() => ({
     dataset: {},
   }));
-  const sectionButtons = ["置顶", "项目", "任务"].map((label, index) => ({
+  const sectionButtons = ["置顶", "项目", "任务", "最近"].map((label, index) => ({
     nodeType: 1,
     dataset: {},
     classList: createClassList(),
@@ -1040,11 +1042,13 @@ defaults.flushTimers(64);
 assert.equal(defaultMetrics.layoutReads, 2);
 assert.equal(defaultMetrics.routePasses, 1, "Window resize must not trigger a full route rescan.");
 assert.deepEqual(defaults.sectionButtons.map((button) => button.dataset.qq2007Styled),
-  ["section", "section", "section"],
+  ["section", "section", "section", "section"],
   "Native section-toggle buttons must receive one-time styling even when their child owns the label text.");
 assert.deepEqual(defaults.sectionPanels.map((panel) => panel.dataset.qq2007Styled),
-  ["panel", "panel", "panel"],
+  ["panel", "panel", "panel", "panel"],
   "Each native sidebar section must expose one semantic QQ2007 panel boundary.");
+assert.equal(defaults.sectionPanels[3].dataset.qq2007Section, "recents",
+  "The native recent section must share the QQ2007 panel treatment used by projects and tasks.");
 const addedRouteNode = {
   nodeType: 1,
   id: "",
