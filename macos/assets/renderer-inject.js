@@ -540,6 +540,7 @@
 
   let chromeParts = null;
   let codexPetSnapshot;
+  let openLocationVisualSignature = null;
   const FRIENDS_KEY = "codex-dream-skin.qq2007.friends";
   const VIEW_KEY = "codex-dream-skin.qq2007.view";
   const CODEX_PET_SELECTOR = '[data-testid="codex-avatar"][data-avatar-asset-ref]';
@@ -1018,6 +1019,25 @@
       setStyleProperty(sourceHost, "--ds2007-open-location-height", `${Math.round(rect.height)}px`);
     }
 
+    const nativeIcon = nativeButton.querySelector?.("img, svg");
+    const nativeChevron = nativeMenuButton?.querySelector?.("svg");
+    const iconHost = proxy.querySelector?.(".ds2007-open-location-icon");
+    const chevronHost = proxy.querySelector?.(".ds2007-open-location-chevron");
+    const visualSignature = `${nativeIcon?.outerHTML || ""}\n${nativeChevron?.outerHTML || ""}`;
+    if (iconHost && chevronHost && (
+      openLocationVisualSignature !== visualSignature ||
+      (nativeIcon && !iconHost.firstElementChild) ||
+      (nativeChevron && !chevronHost.firstElementChild) ||
+      (!nativeIcon && iconHost.firstElementChild) ||
+      (!nativeChevron && chevronHost.textContent !== "⌄")
+    )) {
+      if (nativeIcon) iconHost.replaceChildren?.(nativeIcon.cloneNode(true));
+      else iconHost.replaceChildren?.();
+      if (nativeChevron) chevronHost.replaceChildren?.(nativeChevron.cloneNode(true));
+      else chevronHost.textContent = "⌄";
+      openLocationVisualSignature = visualSignature;
+    }
+
   };
 
   const syncRouteState = (shell, { layout = false } = {}) => {
@@ -1046,7 +1066,7 @@
     if (!shellMain || !document.body) return;
     shellMain.classList.toggle("dream-skin-home-shell", Boolean(home));
     let chrome = document.getElementById(CHROME_ID);
-    if (chrome && chrome.dataset.ds2007Revision !== "18") {
+    if (chrome && chrome.dataset.ds2007Revision !== "19") {
       chrome.remove();
       chrome = null;
       chromeParts = null;
@@ -1066,7 +1086,7 @@
           <button data-nav="拉取请求"><i class="ds2007-icon ds2007-icon--pull-request" aria-hidden="true"></i><span>拉取请求</span></button>
           <button data-nav="聊天"><i class="ds2007-icon ds2007-icon--chat" aria-hidden="true"></i><span>聊天</span></button>
           <button data-nav="换肤"><i class="ds2007-icon ds2007-icon--skin" aria-hidden="true"></i><span>换肤</span></button>
-          <button class="ds2007-open-location-proxy" type="button" hidden aria-label="打开位置"><span class="ds2007-open-location-icon" aria-hidden="true"><i class="ds2007-icon ds2007-icon--folder"></i></span><span>打开位置</span><span class="ds2007-open-location-chevron" aria-hidden="true">⌄</span></button>
+          <button class="ds2007-open-location-proxy" type="button" hidden aria-label="打开位置"><span class="ds2007-open-location-icon" aria-hidden="true"></span><span>打开位置</span><span class="ds2007-open-location-chevron" aria-hidden="true"></span></button>
         </nav>
         <aside class="ds2007-friends" aria-label="Codex 好友">
           <header class="ds2007-right-tabs" role="tablist" aria-label="右侧面板">
@@ -1092,7 +1112,7 @@
         <div class="dream-skin-status"><i></i><span></span></div><div class="dream-skin-quote"></div>
         <div class="dream-skin-particles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="dream-skin-orbit"></div>`;
       document.body.appendChild(chrome);
-      chrome.dataset.ds2007Revision = "18";
+      chrome.dataset.ds2007Revision = "19";
       created = true;
       chromeParts = null;
     }

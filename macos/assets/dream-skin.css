@@ -1327,11 +1327,11 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-toolbar {
 
 .ds2007-toolbar > .ds2007-open-location-proxy {
   flex: 0 0 auto;
-  min-width: 94px;
-  height: 24px;
+  min-width: 112px;
+  height: 28px;
   align-self: center;
   margin-left: auto;
-  padding-inline: 6px 4px;
+  padding-inline: 7px 6px;
   border: 1px solid #7d9fc0;
   border-radius: 2px;
   background: linear-gradient(#fff, #e5f1fb);
@@ -1340,18 +1340,43 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-toolbar {
 .ds2007-toolbar > .ds2007-open-location-proxy[hidden] { display: none; }
 .ds2007-open-location-icon {
   display: inline-flex;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   align-items: center;
   justify-content: center;
 }
 .ds2007-open-location-icon > img,
 .ds2007-open-location-icon > svg {
-  width: 16px;
-  height: 16px;
+  position: static !important;
+  inset: auto !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 18px;
+  height: 18px;
+  max-width: 18px !important;
+  max-height: 18px !important;
   object-fit: contain;
+  transform: none !important;
 }
-.ds2007-open-location-chevron { color: #537a9e; font-size: 13px; line-height: 1; }
+.ds2007-open-location-chevron {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  align-items: center;
+  justify-content: center;
+  color: #537a9e;
+  font-size: 13px;
+  line-height: 1;
+}
+.ds2007-open-location-chevron > svg {
+  position: static !important;
+  inset: auto !important;
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  transform: none !important;
+}
 
 html.codex-dream-skin[data-dream-skin-mode="qq2007"][data-ds2007-open-location-pending="true"]
   main.main-surface > header.app-header-tint

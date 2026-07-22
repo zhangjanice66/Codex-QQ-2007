@@ -31,14 +31,16 @@ assert.deepEqual([...primaryToolbarMarkup.matchAll(/data-nav="([^"]+)"/g)].map((
   "The primary toolbar must expose the six reference entries followed by the skin toggle.");
 assert.match(primaryToolbarMarkup, /class="ds2007-open-location-proxy"[\s\S]{0,180}打开位置/,
   "The primary toolbar must reserve a right-aligned proxy for the native open-location control.");
-assert.match(primaryToolbarMarkup, /ds2007-open-location-icon[\s\S]{0,100}ds2007-icon--folder/,
-  "The open-location proxy must use the agreed folder icon instead of cloning the native default app icon.");
+assert.match(primaryToolbarMarkup, /<span class="ds2007-open-location-icon" aria-hidden="true"><\/span>/,
+  "The open-location proxy must reserve one empty host for the native editor thumbnail.");
+assert.match(primaryToolbarMarkup, /<span class="ds2007-open-location-chevron" aria-hidden="true"><\/span>/,
+  "The open-location proxy must reserve one empty host for the native secondary-action chevron.");
 assert.doesNotMatch(primaryToolbarMarkup, /data-action=|<details|更多|好友/,
   "Friend and secondary utility controls must not appear in the primary toolbar.");
 const visualChromeMarkup = template.match(/<header class="ds2007-titlebar"[\s\S]*?<footer class="ds2007-statusbar"[\s\S]*?<\/footer>/)?.[0] || "";
 const bitmapIconRoles = [
   "mascot", "new-task", "scheduled", "plugins", "sites", "pull-request", "chat", "skin",
-  "folder", "mail", "star", "groups", "folder", "search", "online", "security",
+  "mail", "star", "groups", "folder", "search", "online", "security",
 ];
 assert.deepEqual(
   [...visualChromeMarkup.matchAll(/ds2007-icon--([a-z-]+)/g)].map((match) => match[1]),
@@ -168,8 +170,12 @@ assert.match(template, /data-ds2007-open-location-pending[\s\S]{0,120}scheduleOp
   "Thread navigation must run a bounded settle pass even when React replaces no observed header node.");
 assert.doesNotMatch(template, /scheduleNativeRightSettle|nativeRightChanged/,
   "Native summary mutations must not re-arm a settle loop that can repeatedly open and close the environment panel.");
-assert.doesNotMatch(template, /nativeIcon\.cloneNode|dataset\.nativeIcon/,
-  "The proxy must not change identity when Codex swaps its preferred external application.");
+assert.match(template, /const nativeIcon = nativeButton\.querySelector[\s\S]{0,900}iconHost\.replaceChildren\?\.\(nativeIcon\.cloneNode\(true\)\)/,
+  "The proxy must mirror the native editor thumbnail when Codex swaps its preferred external application.");
+assert.match(template, /const nativeChevron = nativeMenuButton\?\.querySelector[\s\S]{0,900}chevronHost\.replaceChildren\?\.\(nativeChevron\.cloneNode\(true\)\)/,
+  "The proxy must mirror the native secondary-action chevron instead of drawing an unrelated text glyph.");
+assert.match(template, /openLocationVisualSignature !== visualSignature[\s\S]{0,120}!iconHost\.firstElementChild[\s\S]{0,120}!chevronHost\.firstElementChild/,
+  "A rebuilt proxy must restore both native visuals even when their source signature has not changed.");
 assert.match(template, /if \(sidebar\) \{[\s\S]{0,120}if \(created\) cleanupLegacySidebarArtifacts\(sidebar\);[\s\S]{0,80}styleSidebarSubtree\(sidebar\);/,
   "Route synchronization must refresh bounded sidebar markers after a hot upgrade.");
 assert.match(css, /\[data-ds2007-global-nav-source\]\s*\{\s*display:\s*none !important;/,
@@ -196,8 +202,8 @@ assert.match(css, /@media \(max-width:\s*720px\)[\s\S]{0,500}\.ds2007-toolbar > 
   "Compact windows must collapse only primary toolbar labels so the open-location proxy remains visible.");
 assert.match(css, /\.ds2007-open-location-proxy\s*\{[^}]*margin-left:\s*auto/s,
   "The open-location proxy must stay anchored to the toolbar's right edge.");
-assert.match(css, /\.ds2007-open-location-proxy\s*\{[^}]*height:\s*24px[^}]*border:\s*1px solid/s,
-  "The open-location proxy must use the compact folder-button geometry from the approved prototype.");
+assert.match(css, /\.ds2007-open-location-proxy\s*\{[^}]*min-width:\s*112px[^}]*height:\s*28px[^}]*border:\s*1px solid/s,
+  "The open-location proxy must leave enough room for the native editor thumbnail, label, and chevron without overlap.");
 assert.match(css, /data-ds2007-open-location-pending="true"[\s\S]{0,420}button\[aria-label="次要操作"\]/,
   "A route transition must conceal a newly mounted native location control before route synchronization.");
 assert.match(css, /\[data-ds2007-open-location-source="true"\]\s*\{[^}]*position:\s*fixed !important;[^}]*opacity:\s*0 !important;/s,
