@@ -1327,12 +1327,15 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-toolbar {
 
 .ds2007-toolbar > .ds2007-open-location-proxy {
   flex: 0 0 auto;
-  min-width: 106px;
+  min-width: 94px;
+  height: 24px;
+  align-self: center;
   margin-left: auto;
-  padding-inline: 8px 5px;
-  border-color: #8fb1d0;
-  background: linear-gradient(#fff, #edf6ff);
-  box-shadow: inset 0 1px #fff;
+  padding-inline: 6px 4px;
+  border: 1px solid #7d9fc0;
+  border-radius: 2px;
+  background: linear-gradient(#fff, #e5f1fb);
+  box-shadow: inset 0 1px #fff, 0 1px rgba(47, 91, 132, .12);
 }
 .ds2007-toolbar > .ds2007-open-location-proxy[hidden] { display: none; }
 .ds2007-open-location-icon {
@@ -1349,6 +1352,13 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-toolbar {
   object-fit: contain;
 }
 .ds2007-open-location-chevron { color: #537a9e; font-size: 13px; line-height: 1; }
+
+html.codex-dream-skin[data-dream-skin-mode="qq2007"][data-ds2007-open-location-pending="true"]
+  main.main-surface > header.app-header-tint
+  div:has(> button[aria-label="次要操作"], > button[aria-label="Secondary action"]) {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 
 html.codex-dream-skin[data-dream-skin-mode="qq2007"]
   [data-ds2007-open-location-source="true"] {
@@ -1977,6 +1987,15 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"][data-ds2007-native-right-la
 html.codex-dream-skin[data-dream-skin-mode="qq2007"][data-ds2007-native-right-layout="pinned"] .ds2007-friends {
   display: flex;
 }
+html.codex-dream-skin[data-dream-skin-mode="qq2007"]:is(
+  [data-ds2007-native-right-layout="pending"],
+  [data-ds2007-native-right-layout="floating"],
+  [data-ds2007-native-right-layout="pinned"]
+) .ds2007-friends {
+  height: 27px;
+  min-height: 27px;
+  align-self: start;
+}
 html.codex-dream-skin[data-dream-skin-mode="qq2007"][data-ds2007-native-right-layout="floating"] .ds2007-friends > :not(header.ds2007-right-tabs) {
   display: none;
 }
@@ -2032,7 +2051,8 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"][data-ds2007-native-right="o
 }
 html.codex-dream-skin[data-dream-skin-mode="qq2007"]:is(
   [data-ds2007-native-right-layout="pending"],
-  [data-ds2007-native-right-layout="floating"]
+  [data-ds2007-native-right-layout="floating"],
+  [data-ds2007-native-right-layout="pinned"]
 ) .ds2007-friends-tab {
   display: none;
 }

@@ -31,12 +31,14 @@ assert.deepEqual([...primaryToolbarMarkup.matchAll(/data-nav="([^"]+)"/g)].map((
   "The primary toolbar must expose the six reference entries followed by the skin toggle.");
 assert.match(primaryToolbarMarkup, /class="ds2007-open-location-proxy"[\s\S]{0,180}打开位置/,
   "The primary toolbar must reserve a right-aligned proxy for the native open-location control.");
+assert.match(primaryToolbarMarkup, /ds2007-open-location-icon[\s\S]{0,100}ds2007-icon--folder/,
+  "The open-location proxy must use the agreed folder icon instead of cloning the native default app icon.");
 assert.doesNotMatch(primaryToolbarMarkup, /data-action=|<details|更多|好友/,
   "Friend and secondary utility controls must not appear in the primary toolbar.");
 const visualChromeMarkup = template.match(/<header class="ds2007-titlebar"[\s\S]*?<footer class="ds2007-statusbar"[\s\S]*?<\/footer>/)?.[0] || "";
 const bitmapIconRoles = [
   "mascot", "new-task", "scheduled", "plugins", "sites", "pull-request", "chat", "skin",
-  "mail", "star", "groups", "folder", "search", "online", "security",
+  "folder", "mail", "star", "groups", "folder", "search", "online", "security",
 ];
 assert.deepEqual(
   [...visualChromeMarkup.matchAll(/ds2007-icon--([a-z-]+)/g)].map((match) => match[1]),
@@ -160,6 +162,12 @@ assert.match(template, /const nativeOpenLocationButton =[\s\S]{0,700}syncOpenLoc
   "The toolbar open-location control must forward to a bounded native button lookup.");
 assert.match(template, /dataDs2007OpenLocationSource|ds2007OpenLocationSource/,
   "The native open-location source must receive a dedicated reversible marker.");
+assert.match(template, /data-app-action-sidebar-thread-row[\s\S]{0,420}ds2007OpenLocationPending/,
+  "Thread navigation must hide the stale open-location proxy before React replaces its native source.");
+assert.match(template, /data-ds2007-open-location-pending[\s\S]{0,120}scheduleNativeRightSettle\(\)/,
+  "Thread navigation must run a bounded settle pass even when React replaces no observed header node.");
+assert.doesNotMatch(template, /nativeIcon\.cloneNode|dataset\.nativeIcon/,
+  "The proxy must not change identity when Codex swaps its preferred external application.");
 assert.match(template, /if \(sidebar\) \{[\s\S]{0,120}if \(created\) cleanupLegacySidebarArtifacts\(sidebar\);[\s\S]{0,80}styleSidebarSubtree\(sidebar\);/,
   "Route synchronization must refresh bounded sidebar markers after a hot upgrade.");
 assert.match(css, /\[data-ds2007-global-nav-source\]\s*\{\s*display:\s*none !important;/,
@@ -186,6 +194,10 @@ assert.match(css, /@media \(max-width:\s*720px\)[\s\S]{0,500}\.ds2007-toolbar > 
   "Compact windows must collapse only primary toolbar labels so the open-location proxy remains visible.");
 assert.match(css, /\.ds2007-open-location-proxy\s*\{[^}]*margin-left:\s*auto/s,
   "The open-location proxy must stay anchored to the toolbar's right edge.");
+assert.match(css, /\.ds2007-open-location-proxy\s*\{[^}]*height:\s*24px[^}]*border:\s*1px solid/s,
+  "The open-location proxy must use the compact folder-button geometry from the approved prototype.");
+assert.match(css, /data-ds2007-open-location-pending="true"[\s\S]{0,420}button\[aria-label="次要操作"\]/,
+  "A route transition must conceal a newly mounted native location control before route synchronization.");
 assert.match(css, /\[data-ds2007-open-location-source="true"\]\s*\{[^}]*position:\s*fixed !important;[^}]*opacity:\s*0 !important;/s,
   "The native source must be invisibly repositioned to preserve its menu anchor without changing Codex behavior.");
 assert.match(css, /aside\.app-shell-left-panel\s*\{[\s\S]{0,500}overflow:\s*visible !important;/,
@@ -309,6 +321,16 @@ assert.match(
   css,
   /data-ds2007-native-right-layout="pinned"\][^{]*\.ds2007-friends\s*\{[^}]*display:\s*flex;/,
   "A manually pinned environment summary must retain the shared QQ2007 tab header.",
+);
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="pinned"\][^)]*\) \.ds2007-friends\s*\{[^}]*height:\s*27px;[^}]*align-self:\s*start;/s,
+  "The shared environment tab header must end where native dock content begins instead of overlapping its full height.",
+);
+assert.match(
+  css,
+  /data-ds2007-native-right-layout="pinned"\][^)]*\) \.ds2007-friends-tab\s*\{[^}]*display:\s*none;/s,
+  "A pinned native dock must not retain the full-height collapsed friend rail over its content.",
 );
 assert.match(
   css,
@@ -534,12 +556,14 @@ function createFixture(theme, {
   nativeSummaryOpen = false,
   nativeSummaryPinned = false,
   nativeSummaryRetained = false,
+  nativeSummaryMountDelayed = false,
   nativeSummaryText = "环境信息",
   transientDialogOpen = false,
 } = {}) {
   let fixtureShell = nativeShell;
   let rightOpen = nativeRightOpen;
   let summaryOpen = nativeSummaryOpen;
+  let summaryMounted = !nativeSummaryMountDelayed;
   const nodes = new Map();
   const attributes = new Map();
   const bodyAttributes = new Map();
@@ -745,6 +769,7 @@ function createFixture(theme, {
     },
   };
   navActions.push(quickChat);
+  const sidebarListeners = new Map();
   const sidebar = {
     nodeType: 1,
     dataset: {},
@@ -761,6 +786,14 @@ function createFixture(theme, {
       if (selector.includes('group/section-toggle')) return sectionButtons;
       if (selector.includes('button, a')) return navActions;
       return [];
+    },
+    addEventListener(type, handler) {
+      if (!sidebarListeners.has(type)) sidebarListeners.set(type, new Set());
+      sidebarListeners.get(type).add(handler);
+    },
+    removeEventListener(type, handler) { sidebarListeners.get(type)?.delete(handler); },
+    dispatch(type, event) {
+      for (const handler of sidebarListeners.get(type) || []) handler(event);
     },
     removeAttribute(name) {
       if (name === "data-qq2007-styled") delete sidebar.dataset.qq2007Styled;
@@ -872,7 +905,7 @@ function createFixture(theme, {
           .filter((candidate) => candidate.getAttribute("data-ds2007-native-dock") !== null);
       }
       if (rightOpen && selector.includes('[data-testid*="side-panel"]')) return [nativeRightPanel];
-      if ((summaryOpen || nativeSummaryRetained) &&
+      if (((summaryOpen && summaryMounted) || nativeSummaryRetained) &&
         selector.includes('[data-slot="thread-summary-panel-section-actions"]')) {
         return [nativeSummarySignal];
       }
@@ -1021,6 +1054,7 @@ function createFixture(theme, {
     timers,
     window,
     setNativeRightOpen(value) { rightOpen = value; },
+    setNativeSummaryMounted(value) { summaryMounted = value; },
     setNativeShell(value) { fixtureShell = value; },
   };
 }
@@ -1237,6 +1271,11 @@ assert.equal(pinnedNativeSummary.nativeSummaryPortal.getAttribute("data-ds2007-n
   "Pinned summaries must not receive the floating portal marker in tests or production.");
 assert.equal(pinnedNativeSummary.nativeSummaryOwner.getAttribute("data-ds2007-native-dock"), "pinned",
   "The original pinned summary owner must be marked as the fixed dock without being cloned.");
+pinnedNativeSummary.sidebar.dispatch("click", { target: pinnedNativeSummary.activeTaskRow });
+assert.equal(pinnedNativeSummary.nativeSummaryOwner.getAttribute("data-ds2007-native-dock"), null,
+  "Switching tasks must synchronously release a dock marker before React reuses its owner.");
+assert.equal(pinnedNativeSummary.attributes.get("data-ds2007-native-right"), "closed",
+  "Switching tasks must release the previous session's right-dock layout immediately.");
 
 const closedNativeSummary = createFixture({
   id: "qq2007-closed-summary",
@@ -1269,6 +1308,24 @@ assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right"), "c
 guardedNativeSummary.flushTimers(96);
 assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right"), "closed",
   "A released summary must ignore its lingering exit-animation DOM.");
+
+const delayedNativeSummary = createFixture({
+  id: "qq2007-delayed-native-summary",
+  mode: "deep",
+  appearance: "light",
+  art: { safeArea: "left", taskMode: "ambient" },
+}, { nativeSummaryMountDelayed: true });
+vm.runInNewContext(delayedNativeSummary.payload, delayedNativeSummary.context);
+delayedNativeSummary.nativeSummaryToggle.click();
+delayedNativeSummary.flushTimers(96);
+assert.equal(delayedNativeSummary.attributes.get("data-ds2007-native-right"), "closed",
+  "The first route pass may run before the native environment surface mounts.");
+delayedNativeSummary.setNativeSummaryMounted(true);
+delayedNativeSummary.flushTimers(400);
+assert.equal(delayedNativeSummary.attributes.get("data-ds2007-native-right"), "open",
+  "A bounded settle pass must reconcile an asynchronously mounted native environment surface.");
+assert.equal(delayedNativeSummary.nativeSummaryPortal.getAttribute("data-ds2007-native-dock"), "true",
+  "The delayed native environment surface must receive the dock marker after settling.");
 
 const staleNativeRight = createFixture({
   id: "qq2007-stale-native-right",

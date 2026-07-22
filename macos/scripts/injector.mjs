@@ -9,7 +9,7 @@ import { readImageMetadata } from "./image-metadata.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const here = path.dirname(scriptPath);
 const root = path.resolve(here, "..");
-const SKIN_VERSION = "1.7.12";
+const SKIN_VERSION = "1.7.13";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 const CDP_ID_PATTERN = /^[A-Za-z0-9._-]{1,200}$/;
 const MAX_ART_BYTES = 16 * 1024 * 1024;
@@ -888,7 +888,7 @@ async function verifySession(session) {
     )];
     const expectedBitmapIconRoles = [
       'mascot', 'new-task', 'scheduled', 'plugins', 'sites', 'pull-request', 'chat', 'skin',
-      'mail', 'star', 'groups', 'folder', 'search', 'online', 'security',
+      'folder', 'mail', 'star', 'groups', 'folder', 'search', 'online', 'security',
     ];
     const toolbarBitmapIconRoles = new Set([
       'new-task', 'scheduled', 'plugins', 'sites', 'pull-request', 'chat', 'skin',
