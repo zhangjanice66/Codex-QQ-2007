@@ -1012,13 +1012,25 @@
     sourceHost.dataset.ds2007OpenLocationSource = "true";
     document.documentElement?.removeAttribute?.("data-ds2007-open-location-pending");
     const rect = proxy.getBoundingClientRect?.();
-    if (rect) {
-      setStyleProperty(sourceHost, "--ds2007-open-location-x", `${Math.round(rect.left)}px`);
-      setStyleProperty(sourceHost, "--ds2007-open-location-y", `${Math.round(rect.top)}px`);
-      setStyleProperty(sourceHost, "--ds2007-open-location-width", `${Math.round(rect.width)}px`);
-      setStyleProperty(sourceHost, "--ds2007-open-location-height", `${Math.round(rect.height)}px`);
+    const sourceRect = sourceHost.getBoundingClientRect?.();
+    if (rect && sourceRect && rect.width > 0 && sourceRect.width > 0) {
+      const currentDx = Number.parseFloat(
+        sourceHost.style.getPropertyValue("--ds2007-open-location-dx"),
+      ) || 0;
+      const currentDy = Number.parseFloat(
+        sourceHost.style.getPropertyValue("--ds2007-open-location-dy"),
+      ) || 0;
+      setStyleProperty(
+        sourceHost,
+        "--ds2007-open-location-dx",
+        `${Math.round(rect.right - sourceRect.right + currentDx)}px`,
+      );
+      setStyleProperty(
+        sourceHost,
+        "--ds2007-open-location-dy",
+        `${Math.round(rect.top - sourceRect.top + currentDy)}px`,
+      );
     }
-
     const nativeIcon = nativeButton.querySelector?.("img, svg");
     const nativeChevron = nativeMenuButton?.querySelector?.("svg");
     const iconHost = proxy.querySelector?.(".ds2007-open-location-icon");
@@ -1192,10 +1204,15 @@
       );
       destination?.click?.();
     }, "bridgeBound");
-    bindInteraction(chromeParts.openLocationProxy, "click", () => {
+    bindInteraction(chromeParts.openLocationProxy, "click", (event) => {
       const source = document.querySelector?.('[data-ds2007-open-location-source="true"]');
       const nativeMenu = source?.querySelector?.('button[aria-label="次要操作"], button[aria-label="Secondary action"]');
-      const target = nativeMenu || source;
+      const nativePrimary = source?.matches?.("button")
+        ? source
+        : [...(source?.querySelectorAll?.("button") || [])].find((button) => button !== nativeMenu);
+      const target = event.target?.closest?.(".ds2007-open-location-chevron")
+        ? nativeMenu
+        : nativePrimary;
       if (!target) return;
       const rect = target.getBoundingClientRect?.();
       const pointer = {

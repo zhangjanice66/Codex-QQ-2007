@@ -1387,12 +1387,7 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"][data-ds2007-open-location-p
 
 html.codex-dream-skin[data-dream-skin-mode="qq2007"]
   [data-ds2007-open-location-source="true"] {
-  position: fixed !important;
-  left: var(--ds2007-open-location-x) !important;
-  top: var(--ds2007-open-location-y) !important;
-  width: var(--ds2007-open-location-width) !important;
-  height: var(--ds2007-open-location-height) !important;
-  margin: 0 !important;
+  translate: var(--ds2007-open-location-dx) var(--ds2007-open-location-dy) !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }

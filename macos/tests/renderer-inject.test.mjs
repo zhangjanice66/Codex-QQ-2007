@@ -162,6 +162,8 @@ assert.match(template, /host\.dataset\.ds2007GlobalNavSource = label/,
   "Native global actions must remain in place as the functional source for toolbar forwarding.");
 assert.match(template, /const nativeOpenLocationButton =[\s\S]{0,700}syncOpenLocationProxy\(/,
   "The toolbar open-location control must forward to a bounded native button lookup.");
+assert.match(template, /bindInteraction\(chromeParts\.openLocationProxy, "click", \(event\)[\s\S]{0,520}event\.target\?\.closest\?\.\("\.ds2007-open-location-chevron"\)[\s\S]{0,260}nativeMenu[\s\S]{0,160}nativePrimary/,
+  "The open-location proxy must route the chevron to the native menu and its remaining area to the native primary action.");
 assert.match(template, /dataDs2007OpenLocationSource|ds2007OpenLocationSource/,
   "The native open-location source must receive a dedicated reversible marker.");
 assert.match(template, /data-app-action-sidebar-thread-row[\s\S]{0,420}ds2007OpenLocationPending/,
@@ -206,8 +208,14 @@ assert.match(css, /\.ds2007-open-location-proxy\s*\{[^}]*min-width:\s*112px[^}]*
   "The open-location proxy must leave enough room for the native editor thumbnail, label, and chevron without overlap.");
 assert.match(css, /data-ds2007-open-location-pending="true"[\s\S]{0,420}button\[aria-label="次要操作"\]/,
   "A route transition must conceal a newly mounted native location control before route synchronization.");
-assert.match(css, /\[data-ds2007-open-location-source="true"\]\s*\{[^}]*position:\s*fixed !important;[^}]*opacity:\s*0 !important;/s,
-  "The native source must be invisibly repositioned to preserve its menu anchor without changing Codex behavior.");
+assert.match(css, /\[data-ds2007-open-location-source="true"\]\s*\{[^}]*opacity:\s*0 !important;[^}]*pointer-events:\s*none !important;/s,
+  "The native source must stay mounted but invisible while the proxy forwards its actions.");
+assert.match(css, /\[data-ds2007-open-location-source="true"\]\s*\{[^}]*translate:\s*var\(--ds2007-open-location-dx\) var\(--ds2007-open-location-dy\)/s,
+  "The native source anchor must translate with the proxy so its Codex menu opens directly below the visible control.");
+assert.match(template, /--ds2007-open-location-dx[\s\S]{0,700}rect\.right - sourceRect\.right \+ currentDx[\s\S]{0,220}rect\.top - sourceRect\.top \+ currentDy/,
+  "Anchor translation must compensate for its previous offset and remain stable across route synchronization.");
+assert.doesNotMatch(css, /\[data-ds2007-open-location-source="true"\]\s*\{[^}]*(?:position:\s*fixed|--ds2007-open-location-[xy]|left:|top:)/s,
+  "The native source must remain at its original Codex anchor so contained headers cannot move its menu off-screen.");
 assert.match(css, /aside\.app-shell-left-panel\s*\{[\s\S]{0,500}overflow:\s*visible !important;/,
   "The sidebar shell must not clip the native resize handle at its boundary.");
 assert.match(
