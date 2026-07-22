@@ -164,8 +164,10 @@ assert.match(template, /dataDs2007OpenLocationSource|ds2007OpenLocationSource/,
   "The native open-location source must receive a dedicated reversible marker.");
 assert.match(template, /data-app-action-sidebar-thread-row[\s\S]{0,420}ds2007OpenLocationPending/,
   "Thread navigation must hide the stale open-location proxy before React replaces its native source.");
-assert.match(template, /data-ds2007-open-location-pending[\s\S]{0,120}scheduleNativeRightSettle\(\)/,
+assert.match(template, /data-ds2007-open-location-pending[\s\S]{0,120}scheduleOpenLocationSettle\(\)/,
   "Thread navigation must run a bounded settle pass even when React replaces no observed header node.");
+assert.doesNotMatch(template, /scheduleNativeRightSettle|nativeRightChanged/,
+  "Native summary mutations must not re-arm a settle loop that can repeatedly open and close the environment panel.");
 assert.doesNotMatch(template, /nativeIcon\.cloneNode|dataset\.nativeIcon/,
   "The proxy must not change identity when Codex swaps its preferred external application.");
 assert.match(template, /if \(sidebar\) \{[\s\S]{0,120}if \(created\) cleanupLegacySidebarArtifacts\(sidebar\);[\s\S]{0,80}styleSidebarSubtree\(sidebar\);/,
@@ -1300,6 +1302,8 @@ vm.runInNewContext(guardedNativeSummary.payload, guardedNativeSummary.context);
 guardedNativeSummary.nativeSummaryToggle.click();
 assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right"), "open",
   "Opening the native summary must reserve its layout before the native click changes anchor geometry.");
+assert.equal([...guardedNativeSummary.timers.values()].some((timer) => timer.delay === 320), false,
+  "Opening a native summary must not arm the route-only settle timer.");
 assert.equal(guardedNativeSummary.attributes.get("data-ds2007-native-right-layout"), "pending",
   "Opening the native summary must preserve the full pending dock width.");
 guardedNativeSummary.nativeSummaryToggle.click();
@@ -1321,9 +1325,9 @@ delayedNativeSummary.flushTimers(96);
 assert.equal(delayedNativeSummary.attributes.get("data-ds2007-native-right"), "closed",
   "The first route pass may run before the native environment surface mounts.");
 delayedNativeSummary.setNativeSummaryMounted(true);
-delayedNativeSummary.flushTimers(400);
+delayedNativeSummary.window.__CODEX_DREAM_SKIN_STATE__.ensure({ root: false, route: true, layout: false });
 assert.equal(delayedNativeSummary.attributes.get("data-ds2007-native-right"), "open",
-  "A bounded settle pass must reconcile an asynchronously mounted native environment surface.");
+  "The observer's route pass must reconcile an asynchronously mounted native environment surface.");
 assert.equal(delayedNativeSummary.nativeSummaryPortal.getAttribute("data-ds2007-native-dock"), "true",
   "The delayed native environment surface must receive the dock marker after settling.");
 

@@ -87,7 +87,7 @@
   if (previous?.analysisTimer) clearTimeout(previous.analysisTimer);
   if (previous?.resizeHandler) window.removeEventListener("resize", previous.resizeHandler);
   previous?.cancelFrameLayout?.();
-  previous?.cancelNativeRightSettle?.();
+  previous?.cancelOpenLocationSettle?.();
   previous?.disposeInteractions?.();
   if (previous?.mediaHandler && previous?.mediaQuery) {
     try { previous.mediaQuery.removeEventListener("change", previous.mediaHandler); } catch {}
@@ -596,15 +596,15 @@
   const normalizedLabel = (node) => (node?.textContent || "").replace(/\s+/g, " ").trim();
   const nativeSummaryToggles = () =>
     [...(document.querySelectorAll?.(NATIVE_RIGHT_TOGGLE_SELECTOR) || [])];
-  let nativeRightSettleTimer = null;
-  const cancelNativeRightSettle = () => {
-    if (nativeRightSettleTimer !== null) clearTimeout(nativeRightSettleTimer);
-    nativeRightSettleTimer = null;
+  let openLocationSettleTimer = null;
+  const cancelOpenLocationSettle = () => {
+    if (openLocationSettleTimer !== null) clearTimeout(openLocationSettleTimer);
+    openLocationSettleTimer = null;
   };
-  const scheduleNativeRightSettle = () => {
-    if (nativeRightSettleTimer !== null) return;
-    nativeRightSettleTimer = setTimeout(() => {
-      nativeRightSettleTimer = null;
+  const scheduleOpenLocationSettle = () => {
+    if (openLocationSettleTimer !== null) return;
+    openLocationSettleTimer = setTimeout(() => {
+      openLocationSettleTimer = null;
       ensure({ root: false, route: true, layout: false });
     }, 320);
   };
@@ -623,7 +623,6 @@
       if (!toggle) return false;
       toggle.click?.();
       scheduleEnsure({ route: true, layout: false });
-      scheduleNativeRightSettle();
       return true;
     }
     const toggles = [
@@ -637,7 +636,6 @@
     for (const toggle of toggles) toggle.click?.();
     close?.click?.();
     scheduleEnsure({ route: true, layout: false });
-    scheduleNativeRightSettle();
     return true;
   };
   const bindNativeRightToggleGuards = (root) => {
@@ -647,7 +645,6 @@
         setAttribute(root, "data-ds2007-native-right", opening ? "open" : "closed");
         setAttribute(root, "data-ds2007-native-right-layout", opening ? "pending" : "none");
         scheduleEnsure({ route: true, layout: false });
-        scheduleNativeRightSettle();
       }, "ds2007NativeRightGuardBound", true);
     }
   };
@@ -677,18 +674,13 @@
   };
   const persistentNativeRightOwner = (candidate, shellMain) => {
     if (candidate.matches?.(NATIVE_RIGHT_PANEL_SELECTOR)) return candidate;
-    const shellBox = shellMain?.getBoundingClientRect?.();
     let current = candidate.parentElement;
-    let owner = null;
     while (current && current !== shellMain) {
       const box = current.getBoundingClientRect?.();
-      const rightAligned = shellBox && box &&
-        box.left >= shellBox.left + shellBox.width * 0.5 &&
-        box.right >= shellBox.left + shellBox.width - 96;
-      if (rightAligned && box.width >= 220 && box.width <= 480 && box.height >= 240) owner = current;
+      if (box?.width >= 220 && box?.height >= 240) return current;
       current = current.parentElement;
     }
-    return owner;
+    return null;
   };
   const nativeRightLabel = (owner) => {
     if (!owner) return "环境信息";
@@ -705,8 +697,6 @@
   };
   const readNativeRightState = (shellMain) => {
     const summaryToggles = nativeSummaryToggles();
-    const summaryControlOpen = summaryToggles.some((toggle) =>
-      toggle.getAttribute?.("aria-pressed") === "true");
     const pinnedSummaryOpen = summaryToggles.some((toggle) =>
       /^(切换置顶摘要|Toggle pinned summary)$/.test(toggle.getAttribute?.("aria-label") || "") &&
       toggle.getAttribute?.("aria-pressed") === "true");
@@ -717,7 +707,6 @@
       ...(document.querySelectorAll?.(NATIVE_RIGHT_SIGNAL_SELECTOR) || []),
     ].map((candidate) => {
       if (candidate.closest?.(`#${CHROME_ID}`)) return false;
-      if (candidate.matches?.('[data-slot="thread-summary-panel-section-actions"]') && !summaryControlOpen) return false;
       if (summaryExplicitlyClosed &&
         candidate.matches?.('[data-slot="thread-summary-panel-section-actions"]')) return false;
       const structural = candidate.matches?.(NATIVE_RIGHT_PANEL_SELECTOR);
@@ -1209,7 +1198,7 @@
         clearNativeRightDock(root);
         if (chromeParts.openLocationProxy) chromeParts.openLocationProxy.hidden = true;
         setAttribute(root, "data-ds2007-open-location-pending", "true");
-        scheduleNativeRightSettle();
+        scheduleOpenLocationSettle();
       }, "ds2007OpenLocationPending", true);
     }
     markPrimaryNavSources(sidebar);
@@ -1330,7 +1319,7 @@
     document.querySelectorAll('[data-ds2007-open-location-source="true"]')
       .forEach(clearOpenLocationSource);
     cancelFrameLayout();
-    cancelNativeRightSettle();
+    cancelOpenLocationSettle();
     document.querySelectorAll(".ds2007-toolbar-duplicate, .ds2007-project-entry, .ds2007-pinned-source, .ds2007-section-label, [data-qq2007-styled], [data-qq2007-toolbar-duplicate], [data-ds2007-context-bound], [data-ds2007-collapse-bound], [data-ds2007-global-nav-source]")
       .forEach(clearSidebarMarker);
     document.querySelectorAll("[data-qq2007-composer-region], [data-qq2007-composer-control]")
@@ -1432,7 +1421,6 @@
     if (skinView === "native") return;
     let routeChanged = false;
     let frameChanged = false;
-    let nativeRightChanged = false;
     const routeSelector = `main.main-surface, [role="main"], aside.app-shell-left-panel, header.app-header-tint, ${NATIVE_RIGHT_PANEL_SELECTOR}, ${NATIVE_RIGHT_SIGNAL_SELECTOR}, ${NATIVE_RIGHT_TOGGLE_SELECTOR}`;
     const routeContextSelector = 'main.main-surface > header.app-header-tint, .group\\/project-selector, ' +
       'aside.app-shell-left-panel [data-app-action-sidebar-thread-row]';
@@ -1445,10 +1433,7 @@
         record.target?.matches?.(NATIVE_RIGHT_TOGGLE_SELECTOR) ||
         record.target?.closest?.(NATIVE_RIGHT_SIGNAL_SELECTOR) ||
         record.target?.closest?.(NATIVE_RIGHT_PANEL_SELECTOR)
-      )) {
-        routeChanged = true;
-        nativeRightChanged = true;
-      }
+      )) routeChanged = true;
       if (record.type === "characterData" && record.target?.parentElement?.closest?.(routeContextSelector)) {
         routeChanged = true;
         frameChanged = true;
@@ -1471,10 +1456,6 @@
           : node.closest?.("aside.app-shell-left-panel") || node.querySelector?.("aside.app-shell-left-panel");
         if (sidebar) markPrimaryNavSources(sidebar, node.contains?.(sidebar) ? sidebar : node);
         if (node.matches?.(routeSelector) || node.querySelector?.(routeSelector)) routeChanged = true;
-        if (node.matches?.(`${NATIVE_RIGHT_PANEL_SELECTOR}, ${NATIVE_RIGHT_SIGNAL_SELECTOR}, ${NATIVE_RIGHT_TOGGLE_SELECTOR}`) ||
-          node.querySelector?.(`${NATIVE_RIGHT_PANEL_SELECTOR}, ${NATIVE_RIGHT_SIGNAL_SELECTOR}, ${NATIVE_RIGHT_TOGGLE_SELECTOR}`)) {
-          nativeRightChanged = true;
-        }
         if (node.matches?.("header.app-header-tint") || node.querySelector?.("header.app-header-tint")) frameChanged = true;
       }
       for (const node of record.removedNodes || []) {
@@ -1485,7 +1466,6 @@
       }
     }
     if (routeChanged) scheduleEnsure({ route: true, layout: frameChanged });
-    if (nativeRightChanged) scheduleNativeRightSettle();
   });
   rootObserver = new MutationObserver(() => {
     if (samplingNativeShell || skinView === "native") return;
@@ -1510,7 +1490,7 @@
     mediaHandler,
     disposeInteractions,
     cancelFrameLayout,
-    cancelNativeRightSettle,
+    cancelOpenLocationSettle,
     artUrl,
     installToken,
     analysis: artAnalysis,
