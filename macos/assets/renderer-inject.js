@@ -963,6 +963,50 @@
     }, 64);
   };
 
+  const clearOpenLocationSource = (button) => {
+    if (!button) return;
+    delete button.dataset.ds2007OpenLocationSource;
+    for (const name of [
+      "--ds2007-open-location-x", "--ds2007-open-location-y",
+      "--ds2007-open-location-width", "--ds2007-open-location-height",
+    ]) button.style.removeProperty(name);
+  };
+
+  const syncOpenLocationProxy = (nativeButton, proxy) => {
+    if (!proxy) return;
+    const visible = Boolean(nativeButton);
+    proxy.hidden = !visible;
+    if (!visible) {
+      for (const source of document.querySelectorAll?.('[data-ds2007-open-location-source="true"]') || []) {
+        clearOpenLocationSource(source);
+      }
+      return;
+    }
+
+    const nativeMenuButton = nativeButton.parentElement?.querySelector?.('button[aria-label="次要操作"], button[aria-label="Secondary action"]');
+    const sourceHost = nativeMenuButton ? nativeButton.parentElement : nativeButton;
+    for (const source of document.querySelectorAll?.('[data-ds2007-open-location-source="true"]') || []) {
+      if (source !== sourceHost) clearOpenLocationSource(source);
+    }
+    sourceHost.dataset.ds2007OpenLocationSource = "true";
+    const rect = proxy.getBoundingClientRect?.();
+    if (rect) {
+      setStyleProperty(sourceHost, "--ds2007-open-location-x", `${Math.round(rect.left)}px`);
+      setStyleProperty(sourceHost, "--ds2007-open-location-y", `${Math.round(rect.top)}px`);
+      setStyleProperty(sourceHost, "--ds2007-open-location-width", `${Math.round(rect.width)}px`);
+      setStyleProperty(sourceHost, "--ds2007-open-location-height", `${Math.round(rect.height)}px`);
+    }
+
+    const nativeIcon = nativeButton.querySelector?.("img, svg");
+    const iconHost = proxy.querySelector?.(".ds2007-open-location-icon");
+    const iconSignature = nativeIcon?.outerHTML || "";
+    if (iconHost && iconHost.dataset.nativeIcon !== iconSignature) {
+      iconHost.replaceChildren?.(nativeIcon ? nativeIcon.cloneNode(true) : document.createElement("i"));
+      if (!nativeIcon) iconHost.firstElementChild?.classList?.add("ds2007-icon", "ds2007-icon--folder");
+      iconHost.dataset.nativeIcon = iconSignature;
+    }
+  };
+
   const syncRouteState = (shell, { layout = false } = {}) => {
     metrics.routePasses += 1;
     const root = document.documentElement;
@@ -989,7 +1033,7 @@
     if (!shellMain || !document.body) return;
     shellMain.classList.toggle("dream-skin-home-shell", Boolean(home));
     let chrome = document.getElementById(CHROME_ID);
-    if (chrome && chrome.dataset.ds2007Revision !== "16") {
+    if (chrome && chrome.dataset.ds2007Revision !== "17") {
       chrome.remove();
       chrome = null;
       chromeParts = null;
@@ -1009,6 +1053,7 @@
           <button data-nav="拉取请求"><i class="ds2007-icon ds2007-icon--pull-request" aria-hidden="true"></i><span>拉取请求</span></button>
           <button data-nav="聊天"><i class="ds2007-icon ds2007-icon--chat" aria-hidden="true"></i><span>聊天</span></button>
           <button data-nav="换肤"><i class="ds2007-icon ds2007-icon--skin" aria-hidden="true"></i><span>换肤</span></button>
+          <button class="ds2007-open-location-proxy" type="button" hidden aria-label="打开位置"><span class="ds2007-open-location-icon" aria-hidden="true"></span><span>打开位置</span><span class="ds2007-open-location-chevron" aria-hidden="true">⌄</span></button>
         </nav>
         <aside class="ds2007-friends" aria-label="Codex 好友">
           <header class="ds2007-right-tabs" role="tablist" aria-label="右侧面板">
@@ -1034,7 +1079,7 @@
         <div class="dream-skin-status"><i></i><span></span></div><div class="dream-skin-quote"></div>
         <div class="dream-skin-particles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="dream-skin-orbit"></div>`;
       document.body.appendChild(chrome);
-      chrome.dataset.ds2007Revision = "16";
+      chrome.dataset.ds2007Revision = "17";
       created = true;
       chromeParts = null;
     }
@@ -1052,6 +1097,7 @@
         statusbarName: chrome.querySelector(".ds2007-statusbar b"),
         profileSignature: chrome.querySelector(".ds2007-profile-signature"),
         toolbar: chrome.querySelector(".ds2007-toolbar"),
+        openLocationProxy: chrome.querySelector(".ds2007-open-location-proxy"),
         nativeTab: chrome.querySelector('.ds2007-right-tab[data-action="native-panel"]'),
         friendTab: chrome.querySelector('.ds2007-right-tab[data-action="friend-expand"]'),
         nativeTabLabel: chrome.querySelector(".ds2007-native-tab-label"),
@@ -1113,6 +1159,23 @@
       );
       destination?.click?.();
     }, "bridgeBound");
+    bindInteraction(chromeParts.openLocationProxy, "click", () => {
+      const source = document.querySelector?.('[data-ds2007-open-location-source="true"]');
+      const nativeMenu = source?.querySelector?.('button[aria-label="次要操作"], button[aria-label="Secondary action"]');
+      const target = nativeMenu || source;
+      if (!target) return;
+      const rect = target.getBoundingClientRect?.();
+      const pointer = {
+        bubbles: true,
+        cancelable: true,
+        clientX: rect ? rect.left + rect.width / 2 : 0,
+        clientY: rect ? rect.top + rect.height / 2 : 0,
+      };
+      target.dispatchEvent?.(new PointerEvent("pointerdown", pointer));
+      target.dispatchEvent?.(new MouseEvent("mousedown", pointer));
+      target.dispatchEvent?.(new MouseEvent("mouseup", pointer));
+      target.click?.();
+    }, "openLocationProxyBound");
     bindNativeSkinRestore(chromeParts.nativeSkinToggle);
     if (sidebar) {
       if (created) cleanupLegacySidebarArtifacts(sidebar);
@@ -1163,6 +1226,10 @@
     const projectControlName = normalizedLabel(projectControl).replace(/^(选择项目|当前项目)[·：:\s]*/, "");
     const nativeProjectButton = [...(shellMain.querySelectorAll?.(":scope > header.app-header-tint button[aria-label]") || [])]
       .find((candidate) => /^(项目|Project)[：:]/i.test(candidate.getAttribute?.("aria-label") || ""));
+    const nativeOpenLocationButton = !home && [...(nativeHeaderNode?.querySelectorAll?.("button") || [])]
+      .find((candidate) => /(打开位置|Open (project )?location)/i.test(normalizedLabel(candidate)) ||
+        /(打开位置|Open (project )?location)/i.test(candidate.getAttribute?.("aria-label") || ""));
+    syncOpenLocationProxy(nativeOpenLocationButton, chromeParts.openLocationProxy);
     const nativeProjectName = (nativeProjectButton?.getAttribute?.("aria-label") || "")
       .replace(/^(项目|Project)[：:\s]*/i, "");
     const contextName = taskName
@@ -1229,6 +1296,8 @@
     document.querySelectorAll(".ds2007-app-root").forEach((node) => node.classList.remove("ds2007-app-root"));
     document.querySelectorAll(".ds2007-conversation-label, .ds2007-pinned-panel, .ds2007-context-menu")
       .forEach((node) => node.remove());
+    document.querySelectorAll('[data-ds2007-open-location-source="true"]')
+      .forEach(clearOpenLocationSource);
     cancelFrameLayout();
     document.querySelectorAll(".ds2007-toolbar-duplicate, .ds2007-project-entry, .ds2007-pinned-source, .ds2007-section-label, [data-qq2007-styled], [data-qq2007-toolbar-duplicate], [data-ds2007-context-bound], [data-ds2007-collapse-bound], [data-ds2007-global-nav-source]")
       .forEach(clearSidebarMarker);

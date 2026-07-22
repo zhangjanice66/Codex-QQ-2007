@@ -29,6 +29,8 @@ for (const label of primaryToolbarLabels) {
 const primaryToolbarMarkup = template.match(/<nav class="ds2007-toolbar"[\s\S]*?<\/nav>/)?.[0] || "";
 assert.deepEqual([...primaryToolbarMarkup.matchAll(/data-nav="([^"]+)"/g)].map((match) => match[1]), primaryToolbarLabels,
   "The primary toolbar must expose the six reference entries followed by the skin toggle.");
+assert.match(primaryToolbarMarkup, /class="ds2007-open-location-proxy"[\s\S]{0,180}打开位置/,
+  "The primary toolbar must reserve a right-aligned proxy for the native open-location control.");
 assert.doesNotMatch(primaryToolbarMarkup, /data-action=|<details|更多|好友/,
   "Friend and secondary utility controls must not appear in the primary toolbar.");
 const visualChromeMarkup = template.match(/<header class="ds2007-titlebar"[\s\S]*?<footer class="ds2007-statusbar"[\s\S]*?<\/footer>/)?.[0] || "";
@@ -154,6 +156,10 @@ assert.doesNotMatch(template, /document\.querySelectorAll\("button, a, input"\)/
   "Secondary toolbar bridges must use stable native attributes instead of a full-page text scan.");
 assert.match(template, /host\.dataset\.ds2007GlobalNavSource = label/,
   "Native global actions must remain in place as the functional source for toolbar forwarding.");
+assert.match(template, /const nativeOpenLocationButton =[\s\S]{0,700}syncOpenLocationProxy\(/,
+  "The toolbar open-location control must forward to a bounded native button lookup.");
+assert.match(template, /dataDs2007OpenLocationSource|ds2007OpenLocationSource/,
+  "The native open-location source must receive a dedicated reversible marker.");
 assert.match(template, /if \(sidebar\) \{[\s\S]{0,120}if \(created\) cleanupLegacySidebarArtifacts\(sidebar\);[\s\S]{0,80}styleSidebarSubtree\(sidebar\);/,
   "Route synchronization must refresh bounded sidebar markers after a hot upgrade.");
 assert.match(css, /\[data-ds2007-global-nav-source\]\s*\{\s*display:\s*none !important;/,
@@ -176,6 +182,12 @@ assert.match(css, /\.ds2007-statusbar\s*\{[\s\S]{0,600}pointer-events:\s*none;[\
   "The decorative status row must drag the window without intercepting native interactions.");
 assert.doesNotMatch(css, /@media \(max-width:\s*840px\)[\s\S]{0,500}\.ds2007-toolbar > button span\s*\{\s*display:\s*none/,
   "Responsive layouts must retain the six primary toolbar labels.");
+assert.match(css, /@media \(max-width:\s*720px\)[\s\S]{0,500}\.ds2007-toolbar > button:not\(\.ds2007-open-location-proxy\) > span\s*\{\s*display:\s*none;/,
+  "Compact windows must collapse only primary toolbar labels so the open-location proxy remains visible.");
+assert.match(css, /\.ds2007-open-location-proxy\s*\{[^}]*margin-left:\s*auto/s,
+  "The open-location proxy must stay anchored to the toolbar's right edge.");
+assert.match(css, /\[data-ds2007-open-location-source="true"\]\s*\{[^}]*position:\s*fixed !important;[^}]*opacity:\s*0 !important;/s,
+  "The native source must be invisibly repositioned to preserve its menu anchor without changing Codex behavior.");
 assert.match(css, /aside\.app-shell-left-panel\s*\{[\s\S]{0,500}overflow:\s*visible !important;/,
   "The sidebar shell must not clip the native resize handle at its boundary.");
 assert.match(
