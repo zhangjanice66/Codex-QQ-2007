@@ -1426,8 +1426,11 @@ html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-app-root {
   background-size: 100% 72px !important;
 }
 
-html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-app-root > div:first-child,
-html.codex-dream-skin[data-dream-skin-mode="qq2007"] .ds2007-app-root > div:first-child > div:has(> aside.app-shell-left-panel) {
+html.codex-dream-skin[data-dream-skin-mode="qq2007"]
+  .ds2007-app-root > div:has(aside.app-shell-left-panel):has(main.main-surface),
+html.codex-dream-skin[data-dream-skin-mode="qq2007"]
+  .ds2007-app-root > div:has(aside.app-shell-left-panel):has(main.main-surface)
+  > div:has(> aside.app-shell-left-panel):has(> main.main-surface) {
   min-height: 0 !important;
   height: 100% !important;
   max-height: 100% !important;

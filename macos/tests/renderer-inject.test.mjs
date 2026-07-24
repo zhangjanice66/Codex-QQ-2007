@@ -377,6 +377,16 @@ assert.doesNotMatch(css, /data-dream-skin-mode="qq2007"[^}]*\.composer-surface-c
   "The QQ2007 composer must remain in native document flow.");
 assert.match(
   css,
+  /\.ds2007-app-root > div:has\(aside\.app-shell-left-panel\):has\(main\.main-surface\)/,
+  "The QQ2007 workspace height must follow semantic shell descendants when Codex inserts siblings before its layout wrapper.",
+);
+assert.doesNotMatch(
+  css,
+  /\.ds2007-app-root > div:first-child/,
+  "The QQ2007 workspace must not assume that Codex's layout wrapper remains the first child.",
+);
+assert.match(
+  css,
   /@layer theme\s*\{[\s\S]{0,180}data-dream-skin-mode="qq2007"[^,{]*\.composer-surface-chrome\s*\{[^}]*border:\s*1px solid var\(--ds2007-panel-edge\) !important;[^}]*border-width:\s*1px !important;/,
   "The native utilities layer must not override the bounded QQ2007 composer frame.",
 );

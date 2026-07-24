@@ -102,6 +102,8 @@ assert.match(source, /result\.friendPass = friendPass;/,
   "Live verification must expose the Issue 6 friend-panel verdict.");
 assert.match(source, /const friendPass = !qq2007Mode \|\| Boolean\(/,
   "Friend verification must return a boolean and remain neutral in classic mode.");
+assert.match(source, /result\.shell\.y >= result\.appRoot\.y[\s\S]{0,500}result\.composer\.y \+ result\.composer\.height <= result\.appRoot\.y \+ result\.appRoot\.height/,
+  "Live verification must reject a task title or composer clipped outside the QQ2007 workspace.");
 assert.match(source, /bodyGridColumns:\s*getComputedStyle\(document\.body\)\.gridTemplateColumns/,
   "Live verification must capture the computed workspace grid.");
 assert.match(source, /rightColumnWidth[\s\S]{0,120}bodyGridColumns/,
